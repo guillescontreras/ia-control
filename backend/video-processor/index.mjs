@@ -15,6 +15,7 @@ const COLLECTION_ID = 'ia-control-employees';
 const LOGS_TABLE = 'ia-control-logs';
 const ALERTS_TABLE = 'ia-control-alerts';
 const CAMERAS_TABLE = 'ia-control-cameras';
+const EMPLOYEES_TABLE = 'ia-control-employees';
 const SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:825765382487:ia-control-alerts';
 
 export const handler = async (event) => {
@@ -101,6 +102,20 @@ export const handler = async (event) => {
       
       console.log(`Persona reconocida: ${empleadoId} (${confianza.toFixed(2)}%)`);
       
+      // Obtener nombre y apellido del empleado
+      let nombreCompleto = empleadoId;
+      try {
+        const empResponse = await dynamo.send(new GetCommand({
+          TableName: EMPLOYEES_TABLE,
+          Key: { empleadoId }
+        }));
+        if (empResponse.Item) {
+          nombreCompleto = `${empResponse.Item.nombre} ${empResponse.Item.apellido}`;
+        }
+      } catch (error) {
+        console.log('No se pudo obtener nombre del empleado:', error.message);
+      }
+      
       // Registrar acceso en DynamoDB
       const tipoAcceso = accessType === 'ingreso' ? 'ingreso' : 
                          accessType === 'egreso' ? 'egreso' : 'general';
@@ -157,6 +172,7 @@ export const handler = async (event) => {
         body: JSON.stringify({
           tipo: 'autorizado',
           empleadoId,
+          nombreCompleto,
           confianza: Math.round(confianza),
           objetos,
           alerta: objetosDetectados.length > 0

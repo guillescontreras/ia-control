@@ -273,6 +273,7 @@ const MultiCameraMonitor: React.FC = () => {
     cameraId: string;
     imageBase64: string;
   } | null>(null);
+  const [lastAccessTime, setLastAccessTime] = useState<{[key: string]: number}>({});
 
   useEffect(() => {
     loadCameras();
@@ -370,8 +371,15 @@ const MultiCameraMonitor: React.FC = () => {
       
       // Si es autorizado, mostrar modal para seleccionar ingreso/egreso
       if (result.tipo === 'autorizado' && result.empleadoId) {
-        // Solo mostrar modal si no hay uno abierto
-        if (!accessModal?.show) {
+        const now = Date.now();
+        const lastTime = lastAccessTime[result.empleadoId] || 0;
+        const cooldown = 10000; // 10 segundos
+        
+        // Solo mostrar modal si no hay uno abierto y pasó el cooldown
+        if (!accessModal?.show && (now - lastTime) > cooldown) {
+          // Pausar cámara
+          setPausedCameras(prev => new Set(prev).add(cameraId));
+          
           setAccessModal({
             show: true,
             empleadoId: result.empleadoId,
@@ -380,7 +388,7 @@ const MultiCameraMonitor: React.FC = () => {
           });
           
           playSuccessSound();
-          const nombre = result.empleadoId.split(' ').slice(0, 2).join(' ');
+          const nombre = result.nombreCompleto || result.empleadoId;
           speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
         }
       } else if (result.tipo === 'no_autorizado') {
@@ -758,7 +766,17 @@ const MultiCameraMonitor: React.FC = () => {
               </button>
               
               <button
-                onClick={() => setAccessModal(null)}
+                onClick={() => {
+                  // Reanudar cámara al cancelar
+                  if (accessModal) {
+                    setPausedCameras(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(accessModal.cameraId);
+                      return newSet;
+                    });
+                  }
+                  setAccessModal(null);
+                }}
                 className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Cancelar
@@ -786,9 +804,23 @@ const MultiCameraMonitor: React.FC = () => {
       });
 
       if (response.ok) {
-        const nombre = accessModal.empleadoId.split(' ').slice(0, 2).join(' ');
+        const data = await response.json();
+        const nombre = data.nombreCompleto || accessModal.empleadoId;
         toast.success(`✅ ${accessType.toUpperCase()} registrado: ${nombre}`, { duration: 3000 });
         speakText(`${accessType === 'ingreso' ? 'Bienvenido' : 'Hasta luego'} ${nombre}`);
+        
+        // Guardar timestamp del último acceso
+        setLastAccessTime(prev => ({
+          ...prev,
+          [accessModal.empleadoId]: Date.now()
+        }));
+        
+        // Reanudar cámara
+        setPausedCameras(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(accessModal.cameraId);
+          return newSet;
+        });
         
         setCameras(prev => prev.map(cam => 
           cam.id === accessModal.cameraId

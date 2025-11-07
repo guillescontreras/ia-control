@@ -2,12 +2,13 @@
 // Función: Registrar acceso (ingreso/egreso) seleccionado por el usuario
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 
 const dynamoClient = new DynamoDBClient({ region: 'us-east-1' });
 const dynamo = DynamoDBDocumentClient.from(dynamoClient);
 
 const LOGS_TABLE = 'ia-control-logs';
+const EMPLOYEES_TABLE = 'ia-control-employees';
 
 export const handler = async (event) => {
   console.log('Event:', JSON.stringify(event));
@@ -34,6 +35,20 @@ export const handler = async (event) => {
       };
     }
     
+    // Obtener nombre del empleado
+    let nombreCompleto = empleadoId;
+    try {
+      const empResponse = await dynamo.send(new GetCommand({
+        TableName: EMPLOYEES_TABLE,
+        Key: { empleadoId }
+      }));
+      if (empResponse.Item) {
+        nombreCompleto = `${empResponse.Item.nombre} ${empResponse.Item.apellido}`;
+      }
+    } catch (error) {
+      console.log('No se pudo obtener nombre:', error.message);
+    }
+    
     // Registrar acceso en DynamoDB
     await dynamo.send(new PutCommand({
       TableName: LOGS_TABLE,
@@ -56,6 +71,7 @@ export const handler = async (event) => {
         success: true,
         message: `${accessType} registrado correctamente`,
         empleadoId,
+        nombreCompleto,
         accessType
       })
     };
