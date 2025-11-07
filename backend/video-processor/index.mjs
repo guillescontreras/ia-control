@@ -42,6 +42,7 @@ export const handler = async (event) => {
     
     // 1. Buscar rostro en colección
     let faceResponse;
+    let faceDetected = false;
     try {
       faceResponse = await rekognition.send(new SearchFacesByImageCommand({
         CollectionId: COLLECTION_ID,
@@ -49,8 +50,15 @@ export const handler = async (event) => {
         FaceMatchThreshold: 95,
         MaxFaces: 1
       }));
+      faceDetected = true;
     } catch (error) {
-      console.log('No se detectó rostro o error en búsqueda:', error.message);
+      if (error.name === 'InvalidParameterException' && error.message.includes('no faces')) {
+        console.log('No se detectó ningún rostro en la imagen');
+        faceDetected = false;
+      } else {
+        console.log('Error en búsqueda de rostro:', error.message);
+        faceDetected = false;
+      }
       faceResponse = { FaceMatches: [] };
     }
     
@@ -136,8 +144,8 @@ export const handler = async (event) => {
         })
       };
       
-    } else {
-      // Persona no autorizada
+    } else if (faceDetected) {
+      // Rostro detectado pero no reconocido
       console.log('⚠️ Persona no autorizada detectada');
       
       // Enviar alerta SNS
@@ -169,6 +177,18 @@ export const handler = async (event) => {
           tipo: 'no_autorizado',
           objetos,
           alerta: true
+        })
+      };
+    } else {
+      // No hay rostros en la imagen
+      console.log('No hay personas en la imagen');
+      
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          tipo: 'sin_personas',
+          objetos
         })
       };
     }

@@ -337,6 +337,7 @@ const MultiCameraMonitor: React.FC = () => {
       } else if (result.tipo === 'no_autorizado') {
         toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
       }
+      // Si tipo === 'sin_personas', no mostrar nada
       
       setCameras(prev => prev.map(cam => 
         cam.id === cameraId 
