@@ -1,4 +1,4 @@
-import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminDeleteUserCommand, ListUsersCommand, AdminListGroupsForUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminDeleteUserCommand, ListUsersCommand, AdminListGroupsForUserCommand, AdminUpdateUserAttributesCommand, AdminSetUserPasswordCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
@@ -118,6 +118,53 @@ export const handler = async (event) => {
         statusCode: 200,
         headers,
         body: JSON.stringify(users)
+      };
+    }
+
+    // PUT /users/{email} - Actualizar usuario
+    if (method === 'PUT' && path.startsWith('/users/')) {
+      const email = decodeURIComponent(path.split('/')[2]);
+      const { firstName, lastName, role, newPassword } = JSON.parse(event.body);
+
+      // Actualizar atributos
+      if (firstName || lastName) {
+        await cognitoClient.send(new AdminUpdateUserAttributesCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: email,
+          UserAttributes: [
+            { Name: "name", Value: `${firstName} ${lastName}` }
+          ]
+        }));
+      }
+
+      // Cambiar contraseña
+      if (newPassword) {
+        await cognitoClient.send(new AdminSetUserPasswordCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: email,
+          Password: newPassword,
+          Permanent: true
+        }));
+      }
+
+      // Actualizar perfil en DynamoDB
+      if (firstName || lastName) {
+        await dynamoClient.send(new PutCommand({
+          TableName: PROFILES_TABLE,
+          Item: {
+            userId: email,
+            email: email,
+            firstName: firstName,
+            lastName: lastName,
+            updatedAt: Date.now()
+          }
+        }));
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ message: 'Usuario actualizado exitosamente' })
       };
     }
 

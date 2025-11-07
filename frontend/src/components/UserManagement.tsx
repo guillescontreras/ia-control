@@ -15,6 +15,7 @@ const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -54,27 +55,51 @@ const UserManagement: React.FC = () => {
       const session = await fetchAuthSession();
       const token = session.tokens?.idToken?.toString();
 
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      if (editingUser) {
+        // Actualizar usuario
+        const response = await fetch(`${API_URL}/users/${encodeURIComponent(editingUser.email)}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
 
-      if (response.ok) {
-        alert('Usuario creado exitosamente. Se envió un email con la contraseña temporal.');
-        setShowForm(false);
-        setFormData({ email: '', firstName: '', lastName: '', role: 'operator' });
-        loadUsers();
+        if (response.ok) {
+          alert('Usuario actualizado exitosamente.');
+          setShowForm(false);
+          setEditingUser(null);
+          setFormData({ email: '', firstName: '', lastName: '', role: 'operator' });
+          loadUsers();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        }
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
+        // Crear usuario
+        const response = await fetch(`${API_URL}/users`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          alert('Usuario creado exitosamente. Se envió un email con la contraseña temporal.');
+          setShowForm(false);
+          setFormData({ email: '', firstName: '', lastName: '', role: 'operator' });
+          loadUsers();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        }
       }
     } catch (error) {
-      console.error('Error creating user:', error);
-      alert('Error al crear usuario');
+      console.error('Error saving user:', error);
+      alert('Error al guardar usuario');
     } finally {
       setLoading(false);
     }
@@ -122,7 +147,7 @@ const UserManagement: React.FC = () => {
 
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h3 className="text-xl font-semibold mb-4">Nuevo Usuario</h3>
+          <h3 className="text-xl font-semibold mb-4">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -130,9 +155,10 @@ const UserManagement: React.FC = () => {
                 <input
                   type="email"
                   required
+                  disabled={!!editingUser}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 disabled:bg-gray-100"
                 />
               </div>
               <div>
@@ -172,7 +198,7 @@ const UserManagement: React.FC = () => {
               disabled={loading}
               className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
             >
-              {loading ? 'Creando...' : 'Crear Usuario'}
+              {loading ? 'Guardando...' : (editingUser ? 'Actualizar Usuario' : 'Crear Usuario')}
             </button>
           </form>
         </div>
@@ -204,7 +230,23 @@ const UserManagement: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                  <button
+                    onClick={() => {
+                      setEditingUser(user);
+                      const names = user.name?.split(' ') || ['', ''];
+                      setFormData({
+                        email: user.email,
+                        firstName: names[0] || '',
+                        lastName: names.slice(1).join(' ') || '',
+                        role: 'operator'
+                      });
+                      setShowForm(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Editar
+                  </button>
                   <button
                     onClick={() => handleDelete(user.email)}
                     className="text-red-600 hover:text-red-800"
