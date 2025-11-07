@@ -11,12 +11,13 @@ import VideoProcessor from './components/VideoProcessor';
 import LiveCamera from './components/LiveCamera';
 import MultiCameraMonitor from './components/MultiCameraMonitor';
 import UserManagement from './components/UserManagement';
+import PresencePanel from './components/PresencePanel';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 Amplify.configure(awsConfig);
 
-type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'video' | 'live' | 'multicam' | 'users';
+type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'video' | 'live' | 'multicam' | 'users' | 'presence';
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -108,6 +109,16 @@ function App() {
             >
               📊 Dashboard
             </button>
+            <button
+              onClick={() => setActiveSection('presence')}
+              className={`py-4 px-3 border-b-2 font-medium text-sm ${
+                activeSection === 'presence'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              👥 Presencia
+            </button>
             {isAdmin && (
               <>
                 <button
@@ -189,6 +200,7 @@ function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'dashboard' && <Dashboard />}
+        {activeSection === 'presence' && <PresencePanel />}
         {activeSection === 'employees' && <EmployeeManagement />}
         {activeSection === 'users' && <UserManagement />}
         {activeSection === 'logs' && <AccessLog />}

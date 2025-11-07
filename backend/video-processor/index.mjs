@@ -3,7 +3,7 @@
 
 import { RekognitionClient, SearchFacesByImageCommand, DetectLabelsCommand } from '@aws-sdk/client-rekognition';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 const rekognition = new RekognitionClient({ region: 'us-east-1' });
@@ -14,6 +14,7 @@ const sns = new SNSClient({ region: 'us-east-1' });
 const COLLECTION_ID = 'ia-control-employees';
 const LOGS_TABLE = 'ia-control-logs';
 const ALERTS_TABLE = 'ia-control-alerts';
+const CAMERAS_TABLE = 'ia-control-cameras';
 const SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:825765382487:ia-control-alerts';
 
 export const handler = async (event) => {
@@ -39,6 +40,21 @@ export const handler = async (event) => {
     
     const timestamp = Date.now();
     const imageBuffer = Buffer.from(imageBase64, 'base64');
+    
+    // Obtener información de la cámara
+    let cameraInfo;
+    try {
+      const cameraResponse = await dynamo.send(new GetCommand({
+        TableName: CAMERAS_TABLE,
+        Key: { cameraId }
+      }));
+      cameraInfo = cameraResponse.Item;
+    } catch (error) {
+      console.log('No se pudo obtener info de cámara:', error.message);
+      cameraInfo = { accessType: 'general' };
+    }
+    
+    const accessType = cameraInfo?.accessType || 'general';
     
     // 1. Buscar rostro en colección
     let faceResponse;
@@ -86,13 +102,16 @@ export const handler = async (event) => {
       console.log(`Persona reconocida: ${empleadoId} (${confianza.toFixed(2)}%)`);
       
       // Registrar acceso en DynamoDB
+      const tipoAcceso = accessType === 'ingreso' ? 'ingreso' : 
+                         accessType === 'egreso' ? 'egreso' : 'general';
+      
       await dynamo.send(new PutCommand({
         TableName: LOGS_TABLE,
         Item: {
           timestamp,
           empleadoId,
           cameraId,
-          tipo: cameraId === 'entrada' ? 'ingreso' : 'egreso',
+          tipo: tipoAcceso,
           objetos,
           confianza: Math.round(confianza),
           imageUrl: imageKey ? `https://ia-control-coirontech.s3.us-east-1.amazonaws.com/${imageKey}` : null
@@ -105,7 +124,7 @@ export const handler = async (event) => {
         objetosRestringidos.some(rest => obj.toLowerCase().includes(rest.toLowerCase()))
       );
       
-      if (cameraId === 'salida' && objetosDetectados.length > 0) {
+      if (accessType === 'egreso' && objetosDetectados.length > 0) {
         console.log(`⚠️ Alerta: ${empleadoId} saliendo con objetos restringidos`);
         
         // Enviar alerta SNS

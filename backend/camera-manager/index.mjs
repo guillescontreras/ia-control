@@ -38,7 +38,7 @@ export const handler = async (event) => {
     // POST /cameras - Crear nueva cámara
     if (httpMethod === 'POST' && path === '/cameras') {
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-      const { cameraId, name, location, type, url, status } = body;
+      const { cameraId, name, location, type, url, status, accessType } = body;
       
       if (!cameraId || !name) {
         return {
@@ -55,6 +55,7 @@ export const handler = async (event) => {
         type: type || 'ip',
         url: url || '',
         status: status || 'active',
+        accessType: accessType || 'general', // ingreso | egreso | general
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
