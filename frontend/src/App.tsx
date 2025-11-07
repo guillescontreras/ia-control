@@ -10,11 +10,12 @@ import AlertsPanel from './components/AlertsPanel';
 import VideoProcessor from './components/VideoProcessor';
 import LiveCamera from './components/LiveCamera';
 import MultiCameraMonitor from './components/MultiCameraMonitor';
+import UserManagement from './components/UserManagement';
 import './App.css';
 
 Amplify.configure(awsConfig);
 
-type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'video' | 'live' | 'multicam';
+type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'video' | 'live' | 'multicam' | 'users';
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -106,16 +107,28 @@ function App() {
               📊 Dashboard
             </button>
             {isAdmin && (
-              <button
-                onClick={() => setActiveSection('employees')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm ${
-                  activeSection === 'employees'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                👥 Empleados
-              </button>
+              <>
+                <button
+                  onClick={() => setActiveSection('employees')}
+                  className={`py-4 px-3 border-b-2 font-medium text-sm ${
+                    activeSection === 'employees'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  👥 Empleados
+                </button>
+                <button
+                  onClick={() => setActiveSection('users')}
+                  className={`py-4 px-3 border-b-2 font-medium text-sm ${
+                    activeSection === 'users'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  🔐 Usuarios
+                </button>
+              </>
             )}
             <button
               onClick={() => setActiveSection('logs')}
@@ -175,6 +188,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'dashboard' && <Dashboard />}
         {activeSection === 'employees' && <EmployeeManagement />}
+        {activeSection === 'users' && <UserManagement />}
         {activeSection === 'logs' && <AccessLog />}
         {activeSection === 'alerts' && <AlertsPanel />}
         {activeSection === 'video' && <VideoProcessor />}
