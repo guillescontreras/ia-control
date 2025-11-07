@@ -267,6 +267,12 @@ const MultiCameraMonitor: React.FC = () => {
   const [columns, setColumns] = useState(3);
   const [serverHealth, setServerHealth] = useState<any>(null);
   const [pausedCameras, setPausedCameras] = useState<Set<string>>(new Set());
+  const [accessModal, setAccessModal] = useState<{
+    show: boolean;
+    empleadoId: string;
+    cameraId: string;
+    imageBase64: string;
+  } | null>(null);
 
   useEffect(() => {
     loadCameras();
@@ -362,14 +368,18 @@ const MultiCameraMonitor: React.FC = () => {
 
       const result = await response.json();
       
-      // Notificaciones toast + sonido + text-to-speech
+      // Si es autorizado, mostrar modal para seleccionar ingreso/egreso
       if (result.tipo === 'autorizado' && result.empleadoId) {
-        toast.success(`✅ Acceso autorizado: ${result.empleadoId}`, { duration: 3000 });
-        playSuccessSound();
+        setAccessModal({
+          show: true,
+          empleadoId: result.empleadoId,
+          cameraId,
+          imageBase64
+        });
         
-        // Text-to-speech: anunciar nombre del empleado
-        const nombre = result.empleadoId.split(' ').slice(0, 2).join(' '); // Primeros 2 nombres
-        speakText(`Bienvenido ${nombre}`);
+        playSuccessSound();
+        const nombre = result.empleadoId.split(' ').slice(0, 2).join(' ');
+        speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
       } else if (result.tipo === 'no_autorizado') {
         toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
         playAlertSound();
@@ -713,8 +723,98 @@ const MultiCameraMonitor: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Access Direction Modal */}
+      {accessModal?.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-2xl font-bold mb-2 text-center">👤 Empleado Reconocido</h3>
+            <p className="text-center text-gray-600 mb-6 text-lg">{accessModal.empleadoId}</p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  await registerAccess('ingreso');
+                  setAccessModal(null);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg text-xl font-semibold flex items-center justify-center gap-3 transition-colors"
+              >
+                <span className="text-2xl">⬇️</span>
+                <span>INGRESO</span>
+              </button>
+              
+              <button
+                onClick={async () => {
+                  await registerAccess('egreso');
+                  setAccessModal(null);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg text-xl font-semibold flex items-center justify-center gap-3 transition-colors"
+              >
+                <span className="text-2xl">⬆️</span>
+                <span>EGRESO</span>
+              </button>
+              
+              <button
+                onClick={() => setAccessModal(null)}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  async function registerAccess(accessType: 'ingreso' | 'egreso') {
+    if (!accessModal) return;
+
+    try {
+      const response = await fetch(`${API_URL}/register-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empleadoId: accessModal.empleadoId,
+          cameraId: accessModal.cameraId,
+          accessType,
+          timestamp: Date.now()
+        })
+      });
+
+      if (response.ok) {
+        const nombre = accessModal.empleadoId.split(' ').slice(0, 2).join(' ');
+        toast.success(`✅ ${accessType.toUpperCase()} registrado: ${nombre}`, { duration: 3000 });
+        speakText(`${accessType === 'ingreso' ? 'Bienvenido' : 'Hasta luego'} ${nombre}`);
+        
+        setCameras(prev => prev.map(cam => 
+          cam.id === accessModal.cameraId
+            ? { 
+                ...cam, 
+                lastDetection: {
+                  tipo: 'autorizado',
+                  empleadoId: accessModal.empleadoId,
+                  timestamp: Date.now()
+                }
+              }
+            : cam
+        ));
+
+        if (recording) {
+          setEvents(prev => [{
+            cameraId: accessModal.cameraId,
+            timestamp: Date.now(),
+            tipo: 'autorizado',
+            empleadoId: accessModal.empleadoId,
+            accessType
+          }, ...prev].slice(0, 50));
+        }
+      }
+    } catch (error) {
+      console.error('Error registering access:', error);
+      toast.error('Error al registrar acceso');
+    }
+  }
 };
 
 export default MultiCameraMonitor;
