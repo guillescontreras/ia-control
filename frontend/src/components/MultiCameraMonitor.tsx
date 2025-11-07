@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { API_URL } from '../config';
 
 const STREAMING_SERVER = 'http://localhost:8888';
@@ -329,6 +330,13 @@ const MultiCameraMonitor: React.FC = () => {
       }
 
       const result = await response.json();
+      
+      // Notificaciones toast
+      if (result.tipo === 'autorizado' && result.empleadoId) {
+        toast.success(`✅ Acceso autorizado: ${result.empleadoId}`, { duration: 3000 });
+      } else if (result.tipo === 'no_autorizado') {
+        toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
+      }
       
       setCameras(prev => prev.map(cam => 
         cam.id === cameraId 

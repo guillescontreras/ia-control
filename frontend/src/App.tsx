@@ -11,6 +11,7 @@ import VideoProcessor from './components/VideoProcessor';
 import LiveCamera from './components/LiveCamera';
 import MultiCameraMonitor from './components/MultiCameraMonitor';
 import UserManagement from './components/UserManagement';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 Amplify.configure(awsConfig);
@@ -72,6 +73,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <Toaster position="top-right" />
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">

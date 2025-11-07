@@ -4,6 +4,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const MotionDetector = require('./motion-detector');
 
 const app = express();
 const PORT = 8888;
@@ -15,8 +16,12 @@ app.use(express.json());
 const activeStreams = new Map();
 // Pool de conexiones: { cameraId: { rtspUrl, process, lastUsed, refCount } }
 const connectionPool = new Map();
+// Motion detectors por cámara
+const motionDetectors = new Map();
 // Timeout para cleanup (5 minutos sin uso)
 const CLEANUP_TIMEOUT = 5 * 60 * 1000;
+// Estadísticas de motion detection
+const stats = { framesProcessed: 0, framesWithMotion: 0, framesSaved: 0 };
 
 // Directorio para archivos HLS
 const HLS_DIR = path.join(__dirname, 'hls');
@@ -158,9 +163,9 @@ app.get('/stream/list', (req, res) => {
   res.json({ streams });
 });
 
-// Capturar frame de stream RTSP
-app.post('/stream/capture', (req, res) => {
-  const { cameraId } = req.body;
+// Capturar frame de stream RTSP con motion detection
+app.post('/stream/capture', async (req, res) => {
+  const { cameraId, skipMotionDetection } = req.body;
   
   if (!cameraId) {
     return res.status(400).json({ error: 'cameraId requerido' });
@@ -192,8 +197,34 @@ app.post('/stream/capture', (req, res) => {
     imageData = Buffer.concat([imageData, chunk]);
   });
 
-  ffmpegCapture.on('close', () => {
-    res.json({ imageBase64: imageData.toString('base64') });
+  ffmpegCapture.on('close', async () => {
+    stats.framesProcessed++;
+    
+    // Motion detection (si no se solicita skip)
+    if (!skipMotionDetection) {
+      if (!motionDetectors.has(cameraId)) {
+        motionDetectors.set(cameraId, new MotionDetector());
+      }
+      
+      const detector = motionDetectors.get(cameraId);
+      const hasMotion = await detector.detectMotion(imageData);
+      
+      if (!hasMotion) {
+        stats.framesSaved++;
+        return res.json({ 
+          imageBase64: null, 
+          hasMotion: false,
+          message: 'No motion detected - frame skipped'
+        });
+      }
+      
+      stats.framesWithMotion++;
+    }
+    
+    res.json({ 
+      imageBase64: imageData.toString('base64'),
+      hasMotion: true
+    });
     
     // Cleanup del proceso
     if (ffmpegCapture.pid) {
@@ -242,10 +273,20 @@ setInterval(() => {
 
 // Endpoint de salud del servidor
 app.get('/health', (req, res) => {
+  const savingsPercent = stats.framesProcessed > 0 
+    ? ((stats.framesSaved / stats.framesProcessed) * 100).toFixed(1)
+    : 0;
+    
   res.json({
     status: 'ok',
     activeStreams: activeStreams.size,
     poolConnections: connectionPool.size,
+    motionDetection: {
+      framesProcessed: stats.framesProcessed,
+      framesWithMotion: stats.framesWithMotion,
+      framesSaved: stats.framesSaved,
+      savingsPercent: `${savingsPercent}%`
+    },
     connections: Array.from(connectionPool.entries()).map(([id, conn]) => ({
       cameraId: id,
       refCount: conn.refCount,

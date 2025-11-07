@@ -1,4 +1,4 @@
-import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminDeleteUserCommand, ListUsersCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminDeleteUserCommand, ListUsersCommand, AdminListGroupsForUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
@@ -83,14 +83,36 @@ export const handler = async (event) => {
         Limit: 60
       }));
 
-      const users = response.Users.map(user => ({
-        username: user.Username,
-        email: user.Attributes.find(a => a.Name === 'email')?.Value,
-        name: user.Attributes.find(a => a.Name === 'name')?.Value,
-        status: user.UserStatus,
-        enabled: user.Enabled,
-        createdAt: user.UserCreateDate
-      }));
+      // Filtrar solo usuarios con grupos ia-control
+      const usersWithGroups = await Promise.all(
+        response.Users.map(async (user) => {
+          try {
+            const groupsResponse = await cognitoClient.send(new AdminListGroupsForUserCommand({
+              UserPoolId: USER_POOL_ID,
+              Username: user.Username
+            }));
+            
+            const hasIAControlGroup = groupsResponse.Groups.some(g => 
+              g.GroupName === 'ia-control-admins' || g.GroupName === 'ia-control-operators'
+            );
+            
+            if (!hasIAControlGroup) return null;
+            
+            return {
+              username: user.Username,
+              email: user.Attributes.find(a => a.Name === 'email')?.Value,
+              name: user.Attributes.find(a => a.Name === 'name')?.Value,
+              status: user.UserStatus,
+              enabled: user.Enabled,
+              createdAt: user.UserCreateDate
+            };
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+
+      const users = usersWithGroups.filter(u => u !== null);
 
       return {
         statusCode: 200,
