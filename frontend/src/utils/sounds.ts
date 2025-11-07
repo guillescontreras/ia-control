@@ -58,23 +58,33 @@ export const playAlertSound = () => {
   }
 };
 
-export const speakText = (text: string) => {
+let currentAudio: HTMLAudioElement | null = null;
+
+export const speakText = async (text: string) => {
   try {
-    if (!('speechSynthesis' in window)) {
-      console.warn('Text-to-speech no soportado en este navegador');
+    // Detener audio anterior si existe
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+
+    // Llamar a Lambda para generar audio con Polly
+    const response = await fetch('https://bx2rwg4ogk.execute-api.us-east-1.amazonaws.com/prod/text-to-speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+
+    if (!response.ok) {
+      console.error('Error generando audio:', response.status);
       return;
     }
 
-    // Cancelar cualquier speech en progreso
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-
-    window.speechSynthesis.speak(utterance);
+    const data = await response.json();
+    
+    // Reproducir audio
+    currentAudio = new Audio(data.audioUrl);
+    currentAudio.play();
   } catch (error) {
     console.error('Error en text-to-speech:', error);
   }

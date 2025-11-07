@@ -356,6 +356,11 @@ const MultiCameraMonitor: React.FC = () => {
       return; // Ignorar frames vacíos
     }
 
+    // Solo procesar si está grabando
+    if (!recording) {
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/process-frame`, {
         method: 'POST',
