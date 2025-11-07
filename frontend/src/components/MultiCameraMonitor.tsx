@@ -370,16 +370,19 @@ const MultiCameraMonitor: React.FC = () => {
       
       // Si es autorizado, mostrar modal para seleccionar ingreso/egreso
       if (result.tipo === 'autorizado' && result.empleadoId) {
-        setAccessModal({
-          show: true,
-          empleadoId: result.empleadoId,
-          cameraId,
-          imageBase64
-        });
-        
-        playSuccessSound();
-        const nombre = result.empleadoId.split(' ').slice(0, 2).join(' ');
-        speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
+        // Solo mostrar modal si no hay uno abierto
+        if (!accessModal?.show) {
+          setAccessModal({
+            show: true,
+            empleadoId: result.empleadoId,
+            cameraId,
+            imageBase64
+          });
+          
+          playSuccessSound();
+          const nombre = result.empleadoId.split(' ').slice(0, 2).join(' ');
+          speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
+        }
       } else if (result.tipo === 'no_autorizado') {
         toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
         playAlertSound();
