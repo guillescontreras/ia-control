@@ -27,13 +27,14 @@ Thumbs.db
 
 # Streaming
 streaming-server/hls/
+streaming-server/*.log
 
 # AWS
 .aws/
 
 # Backups
 backups/
-LOGS/
+LOGS/Deployment-*
 
 # Temporal
 *.tmp
