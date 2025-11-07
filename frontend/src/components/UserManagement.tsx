@@ -20,7 +20,8 @@ const UserManagement: React.FC = () => {
     email: '',
     firstName: '',
     lastName: '',
-    role: 'operator'
+    role: 'operator',
+    password: ''
   });
 
   useEffect(() => {
@@ -70,7 +71,7 @@ const UserManagement: React.FC = () => {
           alert('Usuario actualizado exitosamente.');
           setShowForm(false);
           setEditingUser(null);
-          setFormData({ email: '', firstName: '', lastName: '', role: 'operator' });
+          setFormData({ email: '', firstName: '', lastName: '', role: 'operator', password: '' });
           loadUsers();
         } else {
           const error = await response.json();
@@ -90,7 +91,7 @@ const UserManagement: React.FC = () => {
         if (response.ok) {
           alert('Usuario creado exitosamente. Se envió un email con la contraseña temporal.');
           setShowForm(false);
-          setFormData({ email: '', firstName: '', lastName: '', role: 'operator' });
+          setFormData({ email: '', firstName: '', lastName: '', role: 'operator', password: '' });
           loadUsers();
         } else {
           const error = await response.json();
@@ -193,6 +194,19 @@ const UserManagement: React.FC = () => {
                 />
               </div>
             </div>
+            {editingUser && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Nueva Contraseña (opcional)</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="Dejar vacío para no cambiar"
+                />
+                <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números</p>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}
@@ -239,7 +253,8 @@ const UserManagement: React.FC = () => {
                         email: user.email,
                         firstName: names[0] || '',
                         lastName: names.slice(1).join(' ') || '',
-                        role: 'operator'
+                        role: 'operator',
+                        password: ''
                       });
                       setShowForm(true);
                     }}
