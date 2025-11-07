@@ -18,6 +18,8 @@ const activeStreams = new Map();
 const connectionPool = new Map();
 // Motion detectors por cámara
 const motionDetectors = new Map();
+// Cámaras pausadas
+const pausedCameras = new Set();
 // Timeout para cleanup (5 minutos sin uso)
 const CLEANUP_TIMEOUT = 5 * 60 * 1000;
 // Estadísticas de motion detection
@@ -163,12 +165,37 @@ app.get('/stream/list', (req, res) => {
   res.json({ streams });
 });
 
+// Pausar cámara
+app.post('/stream/pause/:cameraId', (req, res) => {
+  const { cameraId } = req.params;
+  pausedCameras.add(cameraId);
+  console.log(`⏸️  Cámara ${cameraId} pausada`);
+  res.json({ status: 'paused', cameraId });
+});
+
+// Reanudar cámara
+app.post('/stream/resume/:cameraId', (req, res) => {
+  const { cameraId } = req.params;
+  pausedCameras.delete(cameraId);
+  console.log(`▶️  Cámara ${cameraId} reanudada`);
+  res.json({ status: 'active', cameraId });
+});
+
 // Capturar frame de stream RTSP con motion detection
 app.post('/stream/capture', async (req, res) => {
   const { cameraId, skipMotionDetection } = req.body;
   
   if (!cameraId) {
     return res.status(400).json({ error: 'cameraId requerido' });
+  }
+
+  // Verificar si la cámara está pausada
+  if (pausedCameras.has(cameraId)) {
+    return res.json({ 
+      imageBase64: null, 
+      paused: true,
+      message: 'Camera paused'
+    });
   }
 
   const stream = activeStreams.get(cameraId);
@@ -301,8 +328,11 @@ app.listen(PORT, () => {
   console.log(`📹 Endpoints disponibles:`);
   console.log(`   POST /stream/start - Iniciar stream`);
   console.log(`   POST /stream/stop - Detener stream`);
+  console.log(`   POST /stream/pause/:cameraId - Pausar cámara`);
+  console.log(`   POST /stream/resume/:cameraId - Reanudar cámara`);
   console.log(`   GET  /stream/list - Listar streams`);
   console.log(`   POST /stream/capture - Capturar frame`);
   console.log(`   GET  /health - Estado del servidor`);
   console.log(`\n♻️  Pool de conexiones activo (cleanup cada 60s)`);
+  console.log(`🔍 Motion detection: threshold=60, minPixels=1500`);
 });

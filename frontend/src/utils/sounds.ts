@@ -57,3 +57,25 @@ export const playAlertSound = () => {
     console.error('Error playing alert sound:', error);
   }
 };
+
+export const speakText = (text: string) => {
+  try {
+    if (!('speechSynthesis' in window)) {
+      console.warn('Text-to-speech no soportado en este navegador');
+      return;
+    }
+
+    // Cancelar cualquier speech en progreso
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    window.speechSynthesis.speak(utterance);
+  } catch (error) {
+    console.error('Error en text-to-speech:', error);
+  }
+};

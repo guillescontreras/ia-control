@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { playSuccessSound, playAlertSound } from '../utils/sounds';
+import { playSuccessSound, playAlertSound, speakText } from '../utils/sounds';
 import { API_URL } from '../config';
 
 const STREAMING_SERVER = 'http://localhost:8888';
@@ -24,9 +24,11 @@ interface CameraFeedProps {
   camera: Camera;
   onCapture: (cameraId: string, imageBase64: string) => void;
   size: 'small' | 'medium' | 'large';
+  isPaused: boolean;
+  onTogglePause: (cameraId: string) => void;
 }
 
-const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size }) => {
+const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaused, onTogglePause }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -46,7 +48,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size }) => {
 
   useEffect(() => {
     if (isStreaming) {
-      const interval = camera.type === 'webcam' ? 10000 : 5000;
+      const interval = 1000; // 1 segundo para todas las cámaras
       intervalRef.current = setInterval(() => {
         captureFrame();
       }, interval);
@@ -148,7 +150,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size }) => {
   };
 
   const captureFrame = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isPaused) return;
 
     if (camera.type === 'webcam') {
       if (!canvasRef.current) return;
@@ -211,6 +213,13 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size }) => {
         {camera.name}
       </div>
       
+      <button
+        onClick={() => onTogglePause(camera.id)}
+        className="absolute top-1 right-8 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs hover:bg-opacity-90"
+      >
+        {isPaused ? '▶️' : '⏸️'}
+      </button>
+      
       {!isStreaming && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="text-white text-xs">Cargando...</div>
@@ -257,6 +266,7 @@ const MultiCameraMonitor: React.FC = () => {
   const [cameraSize, setCameraSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [columns, setColumns] = useState(3);
   const [serverHealth, setServerHealth] = useState<any>(null);
+  const [pausedCameras, setPausedCameras] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCameras();
@@ -314,6 +324,26 @@ const MultiCameraMonitor: React.FC = () => {
     localStorage.setItem('ia-control-cameras', JSON.stringify(newCameras));
   };
 
+  const toggleCameraPause = async (cameraId: string) => {
+    const isPaused = pausedCameras.has(cameraId);
+    const endpoint = isPaused ? 'resume' : 'pause';
+    
+    try {
+      await fetch(`${STREAMING_SERVER}/stream/${endpoint}/${cameraId}`, { method: 'POST' });
+      setPausedCameras(prev => {
+        const newSet = new Set(prev);
+        if (isPaused) {
+          newSet.delete(cameraId);
+        } else {
+          newSet.add(cameraId);
+        }
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Error toggling camera pause:', error);
+    }
+  };
+
   const handleCapture = async (cameraId: string, imageBase64: string) => {
     if (!imageBase64 || imageBase64.length < 1000) {
       return; // Ignorar frames vacíos
@@ -332,13 +362,18 @@ const MultiCameraMonitor: React.FC = () => {
 
       const result = await response.json();
       
-      // Notificaciones toast + sonido
+      // Notificaciones toast + sonido + text-to-speech
       if (result.tipo === 'autorizado' && result.empleadoId) {
         toast.success(`✅ Acceso autorizado: ${result.empleadoId}`, { duration: 3000 });
         playSuccessSound();
+        
+        // Text-to-speech: anunciar nombre del empleado
+        const nombre = result.empleadoId.split(' ').slice(0, 2).join(' '); // Primeros 2 nombres
+        speakText(`Bienvenido ${nombre}`);
       } else if (result.tipo === 'no_autorizado') {
         toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
         playAlertSound();
+        speakText('Acceso no autorizado');
       }
       // Si tipo === 'sin_personas', no mostrar nada
       
@@ -507,9 +542,20 @@ const MultiCameraMonitor: React.FC = () => {
       <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
         {cameras.map(camera => (
           <div key={camera.id} className="bg-white rounded-lg shadow p-3">
-            <CameraFeed camera={camera} onCapture={handleCapture} size={cameraSize} />
+            <CameraFeed 
+              camera={camera} 
+              onCapture={handleCapture} 
+              size={cameraSize}
+              isPaused={pausedCameras.has(camera.id)}
+              onTogglePause={toggleCameraPause}
+            />
             <div className="mt-2 flex justify-between items-center">
-              <div className="text-sm text-gray-600">{camera.location}</div>
+              <div className="text-sm text-gray-600">
+                {camera.location}
+                {pausedCameras.has(camera.id) && (
+                  <span className="ml-2 text-orange-600 font-semibold">⏸️ Pausada</span>
+                )}
+              </div>
               <div className="space-x-2">
                 <button
                   onClick={() => editCamera(camera)}
