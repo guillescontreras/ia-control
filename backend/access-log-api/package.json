@@ -1,0 +1,14 @@
+{
+  "name": "ia-control-access-log-api",
+  "version": "1.0.0",
+  "description": "Lambda API para consultar logs de accesos",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "deploy": "zip -r function.zip index.mjs package.json && aws lambda update-function-code --function-name ia-control-access-log-api --zip-file fileb://function.zip --region us-east-1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}

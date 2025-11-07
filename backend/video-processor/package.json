@@ -1,0 +1,16 @@
+{
+  "name": "ia-control-video-processor",
+  "version": "1.0.0",
+  "description": "Lambda para procesar video e identificar personas",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "deploy": "zip -r function.zip index.mjs package.json && aws lambda update-function-code --function-name ia-control-video-processor --zip-file fileb://function.zip --region us-east-1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rekognition": "^3.600.0",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/client-sns": "^3.600.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "ia-control-upload-presigned",
+  "version": "1.0.0",
+  "description": "Lambda para generar presigned URLs de S3",
+  "type": "module",
+  "main": "index.mjs",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0"
+  }
+}

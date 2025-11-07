@@ -1,0 +1,18 @@
+# TAREAS PENDIENTES - IA-CONTROL
+
+## v1.1.0 - Auditoría y Documentación (PRÓXIMA)
+* Auditoría completa de acciones (logs de usuarios)
+* Documentación de usuario (manual PDF)
+* Pruebas de carga y rendimiento
+
+## Bugs Pendientes
+* Validar efectividad de registro multi-foto en producción
+* Probar pool de conexiones RTSP con cámara real
+
+## Mejoras Futuras
+* Reportes programados (diarios/semanales)
+* Envío de reportes por email
+* Implementar cache de estadísticas
+* Optimizar queries de DynamoDB
+* Notificaciones push para alertas
+* Dashboard en tiempo real con WebSockets

@@ -1,0 +1,42 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "rekognition:SearchFacesByImage",
+        "rekognition:DetectLabels"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:825765382487:table/ia-control-logs",
+        "arn:aws:dynamodb:us-east-1:825765382487:table/ia-control-logs/index/*",
+        "arn:aws:dynamodb:us-east-1:825765382487:table/ia-control-alerts",
+        "arn:aws:dynamodb:us-east-1:825765382487:table/ia-control-employees"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "arn:aws:sns:us-east-1:825765382487:ia-control-alerts"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::ia-control-coirontech/*"
+    }
+  ]
+}

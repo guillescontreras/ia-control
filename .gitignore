@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+streaming-server/node_modules/
+
+# Build
+frontend/build/
+frontend/dist/
+
+# Logs
+*.log
+streaming-server/*.log
+streaming-server/streaming-server.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streaming
+streaming-server/hls/
+
+# AWS
+.aws/
+
+# Backups
+backups/
+LOGS/
+
+# Temporal
+*.tmp
+*.temp
