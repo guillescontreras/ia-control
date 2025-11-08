@@ -251,17 +251,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
 
 const MultiCameraMonitor: React.FC = () => {
   const [cameras, setCameras] = useState<Camera[]>([]);
-  const [showAddCamera, setShowAddCamera] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [newCamera, setNewCamera] = useState({
-    id: '',
-    name: '',
-    location: '',
-    type: 'webcam' as 'webcam' | 'ip' | 'rtsp',
-    url: '',
-    deviceId: ''
-  });
-  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+
   const [recording, setRecording] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [cameraSize, setCameraSize] = useState<'small' | 'medium' | 'large'>('medium');
@@ -276,27 +266,22 @@ const MultiCameraMonitor: React.FC = () => {
     imageBase64: string;
   } | null>(null);
   const [lastAccessTime, setLastAccessTime] = useState<{[key: string]: number}>({});
+  const [availableCameras, setAvailableCameras] = useState<Camera[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedCameraId, setSelectedCameraId] = useState('');
 
   useEffect(() => {
     loadCameras();
     checkServerHealth();
-    loadVideoDevices();
     const healthInterval = setInterval(checkServerHealth, 30000);
     return () => clearInterval(healthInterval);
   }, []);
 
-  const loadVideoDevices = async () => {
-    try {
-      // Solicitar permisos primero para obtener etiquetas
-      await navigator.mediaDevices.getUserMedia({ video: true });
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoInputs = devices.filter(device => device.kind === 'videoinput');
-      setVideoDevices(videoInputs);
-      console.log('Dispositivos de video encontrados:', videoInputs.length);
-    } catch (error) {
-      console.error('Error enumerando dispositivos:', error);
-    }
-  };
+  useEffect(() => {
+    loadAvailableCameras();
+  }, [cameras]);
+
+
 
   const checkServerHealth = async () => {
     try {
@@ -320,19 +305,64 @@ const MultiCameraMonitor: React.FC = () => {
 
   const loadCameras = () => {
     const saved = localStorage.getItem('ia-control-cameras');
-    if (saved) {
+    const activeCameras = localStorage.getItem('ia-control-active-cameras');
+    
+    if (saved && activeCameras) {
       const allCameras = JSON.parse(saved);
-      // Filtrar solo cámaras de control
-      const controlCameras = allCameras.filter((c: any) => c.purpose === 'control');
-      setCameras(controlCameras);
+      const activeIds = JSON.parse(activeCameras);
+      // Cargar solo las cámaras activas en el monitor
+      const monitorCameras = allCameras.filter((c: any) => 
+        c.purpose === 'control' && activeIds.includes(c.id)
+      );
+      setCameras(monitorCameras);
     } else {
       setCameras([]);
     }
   };
 
-  const saveCameras = (newCameras: Camera[]) => {
+  const loadAvailableCameras = () => {
+    const saved = localStorage.getItem('ia-control-cameras');
+    if (saved) {
+      const allCameras = JSON.parse(saved);
+      const controlCameras = allCameras.filter((c: any) => c.purpose === 'control');
+      // Filtrar las que NO están en el monitor
+      const available = controlCameras.filter((c: any) => 
+        !cameras.some(cam => cam.id === c.id)
+      );
+      setAvailableCameras(available);
+    }
+  };
+
+  const addCameraToMonitor = () => {
+    if (!selectedCameraId) return;
+    
+    const saved = localStorage.getItem('ia-control-cameras');
+    if (!saved) return;
+    
+    const allCameras = JSON.parse(saved);
+    const cameraToAdd = allCameras.find((c: any) => c.id === selectedCameraId);
+    
+    if (cameraToAdd) {
+      const newCameras = [...cameras, cameraToAdd];
+      setCameras(newCameras);
+      
+      // Guardar IDs de cámaras activas
+      const activeIds = newCameras.map(c => c.id);
+      localStorage.setItem('ia-control-active-cameras', JSON.stringify(activeIds));
+      
+      setShowAddModal(false);
+      setSelectedCameraId('');
+    }
+  };
+
+  const removeCameraFromMonitor = (cameraId: string) => {
+    if (!window.confirm('¿Quitar esta cámara del monitor?')) return;
+    
+    const newCameras = cameras.filter(cam => cam.id !== cameraId);
     setCameras(newCameras);
-    localStorage.setItem('ia-control-cameras', JSON.stringify(newCameras));
+    
+    const activeIds = newCameras.map(c => c.id);
+    localStorage.setItem('ia-control-active-cameras', JSON.stringify(activeIds));
   };
 
   const toggleCameraPause = async (cameraId: string) => {
@@ -430,51 +460,7 @@ const MultiCameraMonitor: React.FC = () => {
     }
   };
 
-  const addCamera = () => {
-    if (!newCamera.id || !newCamera.name) {
-      alert('ID y Nombre son requeridos');
-      return;
-    }
 
-    if (editMode) {
-      // Actualizar cámara existente
-      saveCameras(cameras.map(cam => 
-        cam.id === newCamera.id 
-          ? { ...cam, name: newCamera.name, location: newCamera.location, url: newCamera.url }
-          : cam
-      ));
-    } else {
-      // Agregar nueva cámara
-      const newCam = {
-        ...newCamera,
-        status: 'active' as const
-      };
-      saveCameras([...cameras, newCam]);
-    }
-
-    setNewCamera({ id: '', name: '', location: '', type: 'webcam', url: '', deviceId: '' });
-    setShowAddCamera(false);
-    setEditMode(false);
-  };
-
-  const editCamera = (camera: Camera) => {
-    loadVideoDevices();
-    setEditMode(true);
-    setNewCamera({
-      id: camera.id,
-      name: camera.name,
-      location: camera.location,
-      type: camera.type,
-      url: camera.url || '',
-      deviceId: (camera as any).deviceId || ''
-    });
-    setShowAddCamera(true);
-  };
-
-  const removeCamera = (cameraId: string) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta cámara?')) return;
-    saveCameras(cameras.filter(cam => cam.id !== cameraId));
-  };
 
   const exportEvents = () => {
     const dataStr = JSON.stringify(events, null, 2);
@@ -553,14 +539,14 @@ const MultiCameraMonitor: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              loadVideoDevices();
-              setNewCamera({ id: '', name: '', location: '', type: 'webcam', url: '', deviceId: '' });
-              setShowAddCamera(true);
+              loadAvailableCameras();
+              setShowAddModal(true);
             }}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             + Agregar Cámara
           </button>
+
         </div>
       </div>
 
@@ -585,20 +571,13 @@ const MultiCameraMonitor: React.FC = () => {
                   <span className="ml-2 text-orange-600 font-semibold">⏸️ Pausada</span>
                 )}
               </div>
-              <div className="space-x-2">
-                <button
-                  onClick={() => editCamera(camera)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => removeCamera(camera.id)}
-                  className="text-red-600 hover:text-red-800 text-sm"
-                >
-                  🗑️
-                </button>
-              </div>
+              <button
+                onClick={() => removeCameraFromMonitor(camera.id)}
+                className="text-red-600 hover:text-red-800 text-sm"
+                title="Quitar del monitor"
+              >
+                ❌
+              </button>
             </div>
           </div>
         ))}
@@ -646,99 +625,52 @@ const MultiCameraMonitor: React.FC = () => {
       </div>
 
       {/* Add Camera Modal */}
-      {showAddCamera && (
+      {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editMode ? 'Editar Cámara' : 'Agregar Nueva Cámara'}</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">ID Cámara</label>
-                <input
-                  type="text"
-                  disabled={editMode}
-                  value={newCamera.id}
-                  onChange={(e) => setNewCamera({ ...newCamera, id: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
-                  placeholder="CAM-005"
-                />
+            <h3 className="text-xl font-bold mb-4">Agregar Cámara al Monitor</h3>
+            {availableCameras.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-gray-600 mb-2">No hay cámaras disponibles</p>
+                <p className="text-sm text-gray-500">Todas las cámaras de control están en el monitor o no hay cámaras configuradas.</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                <input
-                  type="text"
-                  value={newCamera.name}
-                  onChange={(e) => setNewCamera({ ...newCamera, name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Entrada Lateral"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Ubicación</label>
-                <input
-                  type="text"
-                  value={newCamera.location}
-                  onChange={(e) => setNewCamera({ ...newCamera, location: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Planta 2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tipo</label>
-                <select
-                  value={newCamera.type}
-                  onChange={(e) => setNewCamera({ ...newCamera, type: e.target.value as any })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                >
-                  <option value="webcam">Webcam</option>
-                  <option value="rtsp">RTSP Stream</option>
-                </select>
-              </div>
-              
-              {newCamera.type === 'webcam' ? (
+            ) : (
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Dispositivo ({videoDevices.length} encontrados)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cámara</label>
                   <select
-                    value={newCamera.deviceId}
-                    onChange={(e) => setNewCamera({ ...newCamera, deviceId: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={selectedCameraId}
+                    onChange={(e) => setSelectedCameraId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   >
-                    <option value="">Predeterminada</option>
-                    {videoDevices.map((device, idx) => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Cámara ${idx + 1}`}
+                    <option value="">-- Selecciona una cámara --</option>
+                    {availableCameras.map(camera => (
+                      <option key={camera.id} value={camera.id}>
+                        {camera.name} ({camera.location})
                       </option>
                     ))}
                   </select>
                 </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">URL RTSP</label>
-                  <input
-                    type="text"
-                    value={newCamera.url}
-                    onChange={(e) => setNewCamera({ ...newCamera, url: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    placeholder="rtsp://usuario:password@192.168.1.100:554/stream1"
-                  />
+                <div className="flex gap-2">
+                  <button
+                    onClick={addCameraToMonitor}
+                    disabled={!selectedCameraId}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Agregar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setSelectedCameraId('');
+                    }}
+                    className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                  >
+                    Cancelar
+                  </button>
                 </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={addCamera}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                >
-                  {editMode ? 'Actualizar' : 'Agregar'}
-                </button>
-                <button
-                  onClick={() => { setShowAddCamera(false); setEditMode(false); }}
-                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-                >
-                  Cancelar
-                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
