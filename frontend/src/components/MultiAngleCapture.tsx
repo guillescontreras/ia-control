@@ -50,41 +50,29 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const loadVideoDevices = async () => {
     console.log('Cargando dispositivos de video...');
     try {
-      console.log('Solicitando permisos de cámara...');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      console.log('Permisos obtenidos, deteniendo stream temporal');
-      stream.getTracks().forEach(track => track.stop());
-      
       const saved = localStorage.getItem('ia-control-cameras');
       if (saved) {
         const cameras = JSON.parse(saved);
         const registroCameras = cameras.filter((c: any) => c.purpose === 'registro' && c.type === 'webcam');
         console.log('Cámaras de registro encontradas:', registroCameras.length);
         
-        if (registroCameras.length === 0) {
-          console.log('No hay cámaras de registro, usando cámara por defecto');
-          toast.error('No hay cámaras de registro configuradas. Usando cámara predeterminada.', { duration: 5000 });
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const videoInputs = devices.filter(d => d.kind === 'videoinput');
-          console.log('Dispositivos de video disponibles:', videoInputs.length);
-          if (videoInputs.length > 0) {
-            setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
-            setSelectedDevice(videoInputs[0].deviceId);
-          }
-          return;
+        if (registroCameras.length > 0) {
+          setVideoDevices(registroCameras.map((c: any) => ({ 
+            deviceId: c.deviceId || '', 
+            label: c.name 
+          })));
+          setSelectedDevice(registroCameras[0].deviceId || '');
+          console.log('Cámara seleccionada:', registroCameras[0].name);
         }
-        
-        setVideoDevices(registroCameras.map((c: any) => ({ 
-          deviceId: c.deviceId || '', 
-          label: c.name 
-        })));
-        setSelectedDevice(registroCameras[0].deviceId || '');
-        console.log('Cámara seleccionada:', registroCameras[0].name);
-      } else {
-        console.log('Sin configuración guardada, usando cámara por defecto');
+      }
+      
+      if (videoDevices.length === 0) {
+        console.log('No hay cámaras configuradas, solicitando permisos...');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputs = devices.filter(d => d.kind === 'videoinput');
-        console.log('Dispositivos de video disponibles:', videoInputs.length);
+        console.log('Dispositivos disponibles:', videoInputs.length);
         if (videoInputs.length > 0) {
           setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
           setSelectedDevice(videoInputs[0].deviceId);
