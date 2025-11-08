@@ -33,8 +33,12 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const [selectedDevice, setSelectedDevice] = useState<string>('');
 
   useEffect(() => {
+    console.log('MultiAngleCapture montado');
     loadVideoDevices();
-    return () => stopCamera();
+    return () => {
+      console.log('MultiAngleCapture desmontado');
+      stopCamera();
+    };
   }, []);
 
   useEffect(() => {
@@ -44,9 +48,12 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   }, [selectedDevice]);
 
   const loadVideoDevices = async () => {
+    console.log('Cargando dispositivos de video...');
     try {
       // Primero obtener permisos
+      console.log('Solicitando permisos de cámara...');
       await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('Permisos obtenidos');
       
       // Cargar cámaras de registro desde localStorage
       const saved = localStorage.getItem('ia-control-cameras');
