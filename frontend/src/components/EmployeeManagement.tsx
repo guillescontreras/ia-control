@@ -314,11 +314,21 @@ const EmployeeManagement: React.FC = () => {
                   {capturedImages.length === 0 ? (
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!formData.empleadoId) {
                           alert('Por favor ingresa el ID del empleado primero');
                           return;
                         }
+                        // Liberar todas las cámaras activas antes de abrir captura
+                        const streams = document.querySelectorAll('video');
+                        streams.forEach(video => {
+                          const stream = (video as HTMLVideoElement).srcObject as MediaStream;
+                          if (stream) {
+                            stream.getTracks().forEach(track => track.stop());
+                          }
+                        });
+                        // Esperar un momento para que se liberen los recursos
+                        await new Promise(resolve => setTimeout(resolve, 500));
                         setShowCameraCapture(true);
                       }}
                       className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 font-semibold"
