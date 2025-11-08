@@ -84,7 +84,7 @@ function App() {
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
-              {user.username} {isAdmin ? '(🔑 Admin)' : '(👁️ Operador)'}
+              {user?.username} {isAdmin ? '(🔑 Admin)' : '(👁️ Operador)'}
             </span>
             <button
               onClick={handleLogout}

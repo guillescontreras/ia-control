@@ -109,7 +109,6 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
           console.log('Video element size:', videoRef.current?.offsetWidth, 'x', videoRef.current?.offsetHeight);
           try {
             await videoRef.current?.play();
-            console.log('Video reproduciendo correctamente');
           } catch (err) {
             console.error('Error al reproducir video:', err);
           }
@@ -180,32 +179,32 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const allCaptured = Object.keys(capturedImages).length === ANGLES.length;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">📸 Registro Multi-Ángulo</h2>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 99999, padding: '20px' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', maxWidth: '1400px', margin: '0 auto', maxHeight: '90vh', overflow: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>📸 Registro Multi-Ángulo</h2>
           <button
             onClick={() => {
               stopCamera();
               onCancel();
             }}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            style={{ fontSize: '32px', border: 'none', background: 'none', cursor: 'pointer' }}
           >
             ×
           </button>
         </div>
-        <p className="text-gray-600 mb-2">Empleado: <span className="font-semibold">{empleadoId}</span></p>
+        <p style={{ marginBottom: '20px' }}>Empleado: <strong>{empleadoId}</strong></p>
         
         {videoDevices.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
               Cámara: {videoDevices.length > 1 && '(Seleccionar)'}
             </label>
             {videoDevices.length > 1 ? (
               <select
                 value={selectedDevice}
                 onChange={(e) => setSelectedDevice(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '8px', padding: '8px 12px' }}
               >
                 {videoDevices.map(device => (
                   <option key={device.deviceId} value={device.deviceId}>
@@ -214,75 +213,67 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
                 ))}
               </select>
             ) : (
-              <p className="text-sm text-gray-600">{videoDevices[0]?.label}</p>
+              <p style={{ fontSize: '14px', color: '#4b5563' }}>{videoDevices[0]?.label}</p>
             )}
           </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           {/* Video Preview */}
-          <div className="space-y-4">
-            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '300px', width: '100%' }}>
+          <div>
+            <div style={{ backgroundColor: '#1f2937', borderRadius: '8px', padding: '10px' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
-                style={{ minHeight: '300px', width: '100%', display: 'block' }}
+                style={{ width: '100%', maxWidth: '640px', height: 'auto', display: 'block', borderRadius: '4px' }}
               />
-              {countdown !== null && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                  <div className="text-white text-9xl font-bold">{countdown}</div>
-                </div>
-              )}
-              <canvas ref={canvasRef} className="hidden" />
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
             
             {!allCaptured && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-lg font-semibold text-blue-900 mb-2">
+              <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '16px', marginTop: '16px' }}>
+                <p style={{ fontSize: '18px', fontWeight: '600', color: '#1e3a8a', marginBottom: '8px' }}>
                   {ANGLES[currentAngle].name}
                 </p>
-                <p className="text-2xl">{ANGLES[currentAngle].instruction}</p>
+                <p style={{ fontSize: '24px' }}>{ANGLES[currentAngle].instruction}</p>
               </div>
             )}
             
             <button
               onClick={captureImage}
               disabled={countdown !== null || allCaptured}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              style={{ width: '100%', backgroundColor: countdown !== null || allCaptured ? '#9ca3af' : '#2563eb', color: 'white', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: countdown !== null || allCaptured ? 'not-allowed' : 'pointer', marginTop: '16px' }}
             >
               {countdown !== null ? 'Capturando...' : allCaptured ? 'Todas capturadas' : '📸 Capturar'}
             </button>
           </div>
           
           {/* Captured Images Grid */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Imágenes Capturadas ({Object.keys(capturedImages).length}/{ANGLES.length})</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <div>
+            <h3 style={{ fontWeight: '600', fontSize: '18px', marginBottom: '16px' }}>Imágenes Capturadas ({Object.keys(capturedImages).length}/{ANGLES.length})</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {ANGLES.map((angle, index) => (
-                <div key={angle.id} className="relative">
-                  <div className={`border-2 rounded-lg overflow-hidden ${
-                    capturedImages[angle.id] ? 'border-green-500' : 'border-gray-300'
-                  }`} style={{ aspectRatio: '4/3' }}>
+                <div key={angle.id} style={{ position: 'relative' }}>
+                  <div style={{ border: capturedImages[angle.id] ? '2px solid #10b981' : '2px solid #d1d5db', borderRadius: '8px', overflow: 'hidden', aspectRatio: '4/3' }}>
                     {capturedImages[angle.id] ? (
                       <img
                         src={`data:image/jpeg;base64,${capturedImages[angle.id]}`}
                         alt={angle.name}
-                        className="w-full h-full object-cover"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-gray-400 text-sm">Sin capturar</span>
+                      <div style={{ width: '100%', height: '100%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ color: '#9ca3af', fontSize: '14px' }}>Sin capturar</span>
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-center mt-1 font-medium">{angle.name}</p>
+                  <p style={{ fontSize: '12px', textAlign: 'center', marginTop: '4px', fontWeight: '500' }}>{angle.name}</p>
                   {capturedImages[angle.id] && (
                     <button
                       onClick={() => retakeAngle(index)}
-                      className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                      style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: '#dc2626', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', border: 'none', cursor: 'pointer' }}
                     >
                       🔄
                     </button>
@@ -293,11 +284,11 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
           </div>
         </div>
         
-        <div className="flex gap-3 mt-6">
+        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
           <button
             onClick={confirmImages}
             disabled={!allCaptured}
-            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            style={{ flex: 1, backgroundColor: !allCaptured ? '#9ca3af' : '#16a34a', color: 'white', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: !allCaptured ? 'not-allowed' : 'pointer' }}
           >
             ✅ Confirmar Fotos
           </button>
@@ -306,7 +297,7 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
               stopCamera();
               onCancel();
             }}
-            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400"
+            style={{ padding: '12px 24px', backgroundColor: '#d1d5db', color: '#374151', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
           >
             Cancelar
           </button>
