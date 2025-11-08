@@ -5,12 +5,22 @@ Inicio: 04/11/2025
 Estado: En Desarrollo Activo
 
 ================================================================================
-VERSIÓN ACTUAL: v1.8.8
+VERSIÓN ACTUAL: v1.9.0
 ================================================================================
 
 ---
 
 ## HISTORIAL DE VERSIONES
+
+### v1.9.0 (08/11/2025) - Fix Definitivo Modal Multi-Ángulo
+- ✅ **Protocolo de resolución ejecutado**: Consulta documentación MDN
+- ✅ play() ahora maneja Promise correctamente (async/await)
+- ✅ Logs de dimensiones: videoWidth/Height y offsetWidth/Height
+- ✅ width: 100% y display: block explícitos en video element
+- ✅ Modal max-width aumentado a 6xl para mejor visualización
+- ✅ Grid breakpoint cambiado a lg (1024px)
+- ✅ Padding agregado al modal container
+- ✅ Error handling en play() según MDN best practices
 
 ### v1.8.8 (08/11/2025) - Fix Cámara Siempre Encendida + Modal Blanco
 - ✅ **Fix crítico:** Cámara nunca se detiene al quitar del monitor

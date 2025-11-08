@@ -115,9 +115,16 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata cargada, reproduciendo');
-          videoRef.current?.play();
+        videoRef.current.onloadedmetadata = async () => {
+          console.log('Video metadata cargada');
+          console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+          console.log('Video element size:', videoRef.current?.offsetWidth, 'x', videoRef.current?.offsetHeight);
+          try {
+            await videoRef.current?.play();
+            console.log('Video reproduciendo correctamente');
+          } catch (err) {
+            console.error('Error al reproducir video:', err);
+          }
         };
       }
     } catch (error) {
@@ -185,8 +192,8 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const allCaptured = Object.keys(capturedImages).length === ANGLES.length;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">📸 Registro Multi-Ángulo</h2>
           <button
@@ -224,17 +231,17 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
           </div>
         )}
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Video Preview */}
           <div className="space-y-4">
-            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '300px' }}>
+            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '300px', width: '100%' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover"
-                style={{ minHeight: '300px' }}
+                style={{ minHeight: '300px', width: '100%', display: 'block' }}
               />
               {countdown !== null && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
