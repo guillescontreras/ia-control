@@ -271,6 +271,7 @@ const MultiCameraMonitor: React.FC = () => {
   const [accessModal, setAccessModal] = useState<{
     show: boolean;
     empleadoId: string;
+    nombreCompleto: string;
     cameraId: string;
     imageBase64: string;
   } | null>(null);
@@ -384,6 +385,7 @@ const MultiCameraMonitor: React.FC = () => {
           setAccessModal({
             show: true,
             empleadoId: result.empleadoId,
+            nombreCompleto: result.nombreCompleto || result.empleadoId,
             cameraId,
             imageBase64
           });
@@ -744,7 +746,7 @@ const MultiCameraMonitor: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-2xl">
             <h3 className="text-2xl font-bold mb-2 text-center">👤 Empleado Reconocido</h3>
-            <p className="text-center text-gray-600 mb-6 text-lg">{accessModal.empleadoId}</p>
+            <p className="text-center text-gray-600 mb-6 text-lg">{accessModal.nombreCompleto}</p>
             
             <div className="space-y-3">
               <button
