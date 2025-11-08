@@ -45,6 +45,9 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
 
   const loadVideoDevices = async () => {
     try {
+      // Primero obtener permisos
+      await navigator.mediaDevices.getUserMedia({ video: true });
+      
       // Cargar cámaras de registro desde localStorage
       const saved = localStorage.getItem('ia-control-cameras');
       if (saved) {
@@ -52,7 +55,14 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
         const registroCameras = cameras.filter((c: any) => c.purpose === 'registro' && c.type === 'webcam');
         
         if (registroCameras.length === 0) {
-          toast.error('No hay cámaras de registro configuradas. Ve a Configuración de Cámaras.');
+          toast.error('No hay cámaras de registro configuradas. Ve a Configuración de Cámaras.', { duration: 5000 });
+          // Usar cámara por defecto si no hay configuradas
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoInputs = devices.filter(d => d.kind === 'videoinput');
+          if (videoInputs.length > 0) {
+            setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
+            setSelectedDevice(videoInputs[0].deviceId);
+          }
           return;
         }
         
@@ -62,11 +72,17 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
         })));
         setSelectedDevice(registroCameras[0].deviceId || '');
       } else {
-        toast.error('No hay cámaras configuradas');
+        // Sin configuración, usar cámara por defecto
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter(d => d.kind === 'videoinput');
+        if (videoInputs.length > 0) {
+          setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
+          setSelectedDevice(videoInputs[0].deviceId);
+        }
       }
     } catch (error) {
       console.error('Error cargando cámaras:', error);
-      toast.error('Error al cargar cámaras');
+      toast.error('Error al acceder a la cámara: ' + (error as Error).message);
     }
   };
 
@@ -157,23 +173,40 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">📸 Registro Multi-Ángulo</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">📸 Registro Multi-Ángulo</h2>
+          <button
+            onClick={() => {
+              stopCamera();
+              onCancel();
+            }}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
+            ×
+          </button>
+        </div>
         <p className="text-gray-600 mb-2">Empleado: <span className="font-semibold">{empleadoId}</span></p>
         
-        {videoDevices.length > 1 && (
+        {videoDevices.length > 0 && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cámara:</label>
-            <select
-              value={selectedDevice}
-              onChange={(e) => setSelectedDevice(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            >
-              {videoDevices.map(device => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label}
-                </option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cámara: {videoDevices.length > 1 && '(Seleccionar)'}
+            </label>
+            {videoDevices.length > 1 ? (
+              <select
+                value={selectedDevice}
+                onChange={(e) => setSelectedDevice(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              >
+                {videoDevices.map(device => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-gray-600">{videoDevices[0]?.label}</p>
+            )}
           </div>
         )}
         
