@@ -4,7 +4,7 @@ import { API_URL } from '../config';
 
 interface MultiAngleCaptureProps {
   empleadoId: string;
-  onComplete: () => void;
+  onComplete: (images: string[]) => void;
   onCancel: () => void;
 }
 
@@ -84,37 +84,11 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
     }
   };
 
-  const registerAllImages = async () => {
-    setIsCapturing(true);
-    try {
-      const images = Object.values(capturedImages);
-      
-      for (let i = 0; i < images.length; i++) {
-        const response = await fetch(`${API_URL}/register-employee`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            empleadoId,
-            imageBase64: images[i]
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error registrando imagen ${i + 1}`);
-        }
-        
-        toast.success(`Imagen ${i + 1}/${images.length} registrada`);
-      }
-      
-      toast.success('✅ Todas las imágenes registradas correctamente');
-      stopCamera();
-      onComplete();
-    } catch (error) {
-      console.error('Error registering images:', error);
-      toast.error('Error al registrar imágenes');
-    } finally {
-      setIsCapturing(false);
-    }
+  const confirmImages = () => {
+    const images = Object.values(capturedImages);
+    stopCamera();
+    onComplete(images);
+    toast.success(`✅ ${images.length} fotos listas para registro`);
   };
 
   const retakeAngle = (index: number) => {
@@ -210,19 +184,18 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
         
         <div className="flex gap-3 mt-6">
           <button
-            onClick={registerAllImages}
-            disabled={!allCaptured || isCapturing}
+            onClick={confirmImages}
+            disabled={!allCaptured}
             className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isCapturing ? 'Registrando...' : '✅ Registrar Todas las Imágenes'}
+            ✅ Confirmar Fotos
           </button>
           <button
             onClick={() => {
               stopCamera();
               onCancel();
             }}
-            disabled={isCapturing}
-            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 disabled:opacity-50"
+            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400"
           >
             Cancelar
           </button>

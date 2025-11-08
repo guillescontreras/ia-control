@@ -19,8 +19,8 @@ const EmployeeManagement: React.FC = () => {
     imageFiles: [] as File[],
   });
   const [uploading, setUploading] = useState(false);
-  const [showMultiAngle, setShowMultiAngle] = useState(false);
-  const [multiAngleEmpleadoId, setMultiAngleEmpleadoId] = useState('');
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
 
   useEffect(() => {
     loadEmployees();
@@ -105,15 +105,14 @@ const EmployeeManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editMode && formData.imageFiles.length === 0) {
-      alert('Por favor selecciona al menos una foto');
+    if (!editMode && capturedImages.length === 0) {
+      alert('Por favor captura las fotos con la cámara');
       return;
     }
 
     setUploading(true);
     try {
       if (editMode) {
-        // Modo edición
         await fetch(`${API_URL}/employees/${formData.empleadoId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -125,11 +124,11 @@ const EmployeeManagement: React.FC = () => {
         });
         alert('Empleado actualizado exitosamente');
       } else {
-        // Modo registro
         const uploadedKeys = [];
-        for (let i = 0; i < formData.imageFiles.length; i++) {
-          const file = formData.imageFiles[i];
+        for (let i = 0; i < capturedImages.length; i++) {
           const filename = `${formData.empleadoId}_${i + 1}.jpg`;
+          const blob = await fetch(`data:image/jpeg;base64,${capturedImages[i]}`).then(r => r.blob());
+          const file = new File([blob], filename, { type: 'image/jpeg' });
           
           const uploadData = await getUploadUrl(filename, file.type);
           
@@ -154,11 +153,13 @@ const EmployeeManagement: React.FC = () => {
           imageKeys: uploadedKeys,
         });
 
-        alert(`Empleado registrado exitosamente con ${formData.imageFiles.length} foto(s)`);
+        alert(`Empleado registrado exitosamente con ${capturedImages.length} foto(s)`);
       }
       
       setShowModal(false);
       setEditMode(false);
+      setShowCameraCapture(false);
+      setCapturedImages([]);
       setFormData({ empleadoId: '', nombre: '', apellido: '', departamento: '', imageFiles: [] });
       loadEmployees();
     } catch (error: any) {
@@ -189,18 +190,6 @@ const EmployeeManagement: React.FC = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             + Agregar Empleado
-          </button>
-          <button
-            onClick={() => {
-              const id = prompt('ID del empleado para registro multi-ángulo:');
-              if (id) {
-                setMultiAngleEmpleadoId(id);
-                setShowMultiAngle(true);
-              }
-            }}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-          >
-            📸 Registro Multi-Ángulo
           </button>
         </div>
       </div>
@@ -261,18 +250,18 @@ const EmployeeManagement: React.FC = () => {
         </table>
       </div>
 
-      {showMultiAngle && (
+      {showModal && !editMode && showCameraCapture && (
         <MultiAngleCapture
-          empleadoId={multiAngleEmpleadoId}
-          onComplete={() => {
-            setShowMultiAngle(false);
-            loadEmployees();
+          empleadoId={formData.empleadoId}
+          onComplete={(images) => {
+            setCapturedImages(images);
+            setShowCameraCapture(false);
           }}
-          onCancel={() => setShowMultiAngle(false)}
+          onCancel={() => setShowCameraCapture(false)}
         />
       )}
 
-      {showModal && (
+      {showModal && (!showCameraCapture || editMode) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">{editMode ? 'Editar Empleado' : 'Registrar Nuevo Empleado'}</h3>
@@ -321,31 +310,56 @@ const EmployeeManagement: React.FC = () => {
               </div>
               {!editMode && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Fotos (múltiples ángulos recomendado)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    required
-                    onChange={(e) => setFormData({ ...formData, imageFiles: Array.from(e.target.files || []) })}
-                    className="mt-1 block w-full"
-                  />
-                  {formData.imageFiles.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">{formData.imageFiles.length} foto(s) seleccionada(s)</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fotos Multi-Ángulo (Obligatorio)</label>
+                  {capturedImages.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!formData.empleadoId) {
+                          alert('Por favor ingresa el ID del empleado primero');
+                          return;
+                        }
+                        setShowCameraCapture(true);
+                      }}
+                      className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 font-semibold"
+                    >
+                      📸 Capturar Fotos con Cámara
+                    </button>
+                  ) : (
+                    <div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                        <p className="text-green-800 font-semibold">✅ {capturedImages.length} fotos capturadas</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCapturedImages([]);
+                          setShowCameraCapture(true);
+                        }}
+                        className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                      >
+                        🔄 Volver a Capturar
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={uploading}
+                  disabled={uploading || (!editMode && capturedImages.length === 0)}
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {uploading ? (editMode ? 'Actualizando...' : 'Registrando...') : (editMode ? 'Actualizar' : 'Registrar')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setEditMode(false); }}
+                  onClick={() => { 
+                    setShowModal(false); 
+                    setEditMode(false);
+                    setShowCameraCapture(false);
+                    setCapturedImages([]);
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancelar

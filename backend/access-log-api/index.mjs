@@ -3,13 +3,16 @@
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { RekognitionClient, DeleteFacesCommand } from '@aws-sdk/client-rekognition';
 
 const dynamoClient = new DynamoDBClient({ region: 'us-east-1' });
 const dynamo = DynamoDBDocumentClient.from(dynamoClient);
+const rekognition = new RekognitionClient({ region: 'us-east-1' });
 
 const LOGS_TABLE = 'ia-control-logs';
 const EMPLOYEES_TABLE = 'ia-control-employees';
 const ALERTS_TABLE = 'ia-control-alerts';
+const COLLECTION_ID = 'ia-control-employees';
 
 export const handler = async (event) => {
   console.log('Event:', JSON.stringify(event));
@@ -138,6 +141,38 @@ export const handler = async (event) => {
     if (httpMethod === 'DELETE' && path.startsWith('/employees/')) {
       const empleadoId = path.split('/')[2];
       
+      // 1. Obtener faceIds del empleado
+      const empResult = await dynamo.send(new GetCommand({
+        TableName: EMPLOYEES_TABLE,
+        Key: { empleadoId }
+      }));
+      
+      if (!empResult.Item) {
+        return {
+          statusCode: 404,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({ error: 'Empleado no encontrado' })
+        };
+      }
+      
+      // 2. Eliminar rostros de Rekognition
+      const faceIds = empResult.Item.faceIds || [empResult.Item.faceId];
+      if (faceIds && faceIds.length > 0) {
+        try {
+          await rekognition.send(new DeleteFacesCommand({
+            CollectionId: COLLECTION_ID,
+            FaceIds: faceIds.filter(id => id)
+          }));
+          console.log(`Eliminados ${faceIds.length} rostro(s) de Rekognition`);
+        } catch (error) {
+          console.error('Error eliminando rostros:', error.message);
+        }
+      }
+      
+      // 3. Eliminar de DynamoDB
       await dynamo.send(new DeleteCommand({
         TableName: EMPLOYEES_TABLE,
         Key: { empleadoId }
@@ -149,7 +184,10 @@ export const handler = async (event) => {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         },
-        body: JSON.stringify({ message: 'Empleado eliminado exitosamente' })
+        body: JSON.stringify({ 
+          message: 'Empleado eliminado exitosamente',
+          facesDeleted: faceIds.length
+        })
       };
     }
     
