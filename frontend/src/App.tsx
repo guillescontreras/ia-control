@@ -36,6 +36,10 @@ function App() {
       const session = await fetchAuthSession();
       const groups = session.tokens?.accessToken?.payload['cognito:groups'] as string[] || [];
       
+      console.log('Usuario:', currentUser.username);
+      console.log('Grupos recibidos:', groups);
+      console.log('Es admin?', groups.includes('ia-control-admins'));
+      
       setUser(currentUser);
       setUserGroups(groups);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminDeleteUserCommand, ListUsersCommand, AdminListGroupsForUserCommand, AdminUpdateUserAttributesCommand, AdminSetUserPasswordCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminRemoveUserFromGroupCommand, AdminDeleteUserCommand, ListUsersCommand, AdminListGroupsForUserCommand, AdminUpdateUserAttributesCommand, AdminSetUserPasswordCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
@@ -137,6 +137,37 @@ export const handler = async (event) => {
             { Name: "name", Value: `${firstName} ${lastName}` }
           ]
         }));
+      }
+
+      // Actualizar rol (grupos)
+      if (role) {
+        console.log('Actualizando rol a:', role);
+        // Obtener grupos actuales
+        const currentGroupsResponse = await cognitoClient.send(new AdminListGroupsForUserCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: email
+        }));
+        
+        // Remover de grupos ia-control
+        for (const group of currentGroupsResponse.Groups || []) {
+          if (group.GroupName === 'ia-control-admins' || group.GroupName === 'ia-control-operators') {
+            await cognitoClient.send(new AdminRemoveUserFromGroupCommand({
+              UserPoolId: USER_POOL_ID,
+              Username: email,
+              GroupName: group.GroupName
+            }));
+            console.log('Removido de grupo:', group.GroupName);
+          }
+        }
+        
+        // Agregar al nuevo grupo
+        const newGroupName = role === 'admin' ? 'ia-control-admins' : 'ia-control-operators';
+        await cognitoClient.send(new AdminAddUserToGroupCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: email,
+          GroupName: newGroupName
+        }));
+        console.log('Agregado a grupo:', newGroupName);
       }
 
       // Cambiar contraseña
