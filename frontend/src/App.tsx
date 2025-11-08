@@ -12,12 +12,13 @@ import LiveCamera from './components/LiveCamera';
 import MultiCameraMonitor from './components/MultiCameraMonitor';
 import UserManagement from './components/UserManagement';
 import PresencePanel from './components/PresencePanel';
+import CameraSettings from './components/CameraSettings';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 Amplify.configure(awsConfig);
 
-type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'multicam' | 'users' | 'presence';
+type Section = 'dashboard' | 'employees' | 'logs' | 'alerts' | 'multicam' | 'users' | 'presence' | 'cameras';
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -173,6 +174,18 @@ function App() {
             >
               🎬 Multi-Cámara
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => setActiveSection('cameras')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm ${
+                  activeSection === 'cameras'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                ⚙️ Cámaras
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -186,6 +199,7 @@ function App() {
         {activeSection === 'logs' && <AccessLog />}
         {activeSection === 'alerts' && <AlertsPanel />}
         {activeSection === 'multicam' && <MultiCameraMonitor />}
+        {activeSection === 'cameras' && <CameraSettings />}
       </main>
 
       {/* Footer */}

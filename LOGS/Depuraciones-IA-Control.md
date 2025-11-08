@@ -5,12 +5,61 @@ Inicio: 04/11/2025
 Estado: En Desarrollo Activo
 
 ================================================================================
-VERSIÓN ACTUAL: v1.0.0
+VERSIÓN ACTUAL: v1.7.0
 ================================================================================
 
 ---
 
 ## HISTORIAL DE VERSIONES
+
+### v1.7.0 (08/11/2025) - Fix Crítico Eliminación de Empleados
+- ✅ Corregido bug crítico: empleados eliminados seguían siendo detectados
+- ✅ Endpoint DELETE /employees/{id} ahora elimina rostros de Rekognition
+- ✅ Agregado DeleteFacesCommand al eliminar empleado
+- ✅ Permisos IAM actualizados (rekognition:DeleteFaces)
+- ✅ Dependencia @aws-sdk/client-rekognition agregada
+- ✅ Lambda ia-control-access-log-api desplegada
+- ✅ Probado y funcionando correctamente
+
+### v1.6.x (07/11/2025) - Mejoras UX y Registro Multi-Ángulo
+- ✅ Registro multi-ángulo para mejorar reconocimiento facial
+- ✅ Eliminadas solapas Video y En Vivo (simplificación UI)
+- ✅ Fix: Usar nombre completo en lugar de empleadoId
+- ✅ Amazon Polly integrado para síntesis de voz
+- ✅ Fix: Detección solo al grabar (optimización)
+- ✅ Fix: Evitar modal duplicado y speech repetitivo
+- ✅ Botones visibles y grid responsive
+- ✅ Botón Ingreso/Egreso implementado
+
+### v1.5.0 (07/11/2025) - Mejoras Críticas AWS Best Practices
+- ✅ Motion detection mejorado (threshold 60, blur 1.5)
+- ✅ Intervalo de captura reducido a 1 segundo
+- ✅ Text-to-speech con Web Speech API
+- ✅ Botón pausa/reanudar por cámara
+- ✅ Logs detallados de motion detection
+- ✅ Reducción de falsos positivos
+
+### v1.4.0 (07/11/2025) - Edición Completa de Usuarios y Empleados
+- ✅ Edición de usuarios del sistema
+- ✅ Edición de empleados registrados
+- ✅ CORS configurado en PUT /users
+- ✅ Campo contraseña en edición de usuarios
+
+### v1.3.0 (06/11/2025) - Alertas Sonoras y Presencia
+- ✅ Alertas sonoras implementadas
+- ✅ Logo mejorado
+- ✅ Sistema de presencia y control de asistencia
+- ✅ Tracking de ingresos/egresos
+
+### v1.2.0 (06/11/2025) - Motion Detection y Notificaciones
+- ✅ Motion detection implementado
+- ✅ Toast notifications
+- ✅ Optimización de procesamiento de frames
+
+### v1.1.0 (06/11/2025) - Gestión de Usuarios
+- ✅ Gestión de usuarios con AdminCreateUser
+- ✅ Integración con Cognito User Pool
+- ✅ Roles y permisos por grupo
 
 ### v1.0.0 (06/11/2025) - Producción con Autenticación
 - ✅ Autenticación con AWS Cognito
@@ -99,23 +148,17 @@ VERSIÓN ACTUAL: v1.0.0
 
 ### 🔴 Alta Prioridad
 
+Ninguno
+
+### 🟡 Media Prioridad
+
 #### Reconocimiento desde Ángulos Cenitales
 **Problema:** Cámara en techo no reconoce empleados a distancia
 **Causa:** Ángulo cenital + distancia = rostro muy pequeño
 **Solución implementada:** Registro con múltiples fotos
 **Pendiente:** Validar efectividad en producción
 
-### 🟡 Media Prioridad
-
 ### 🟢 Baja Prioridad
-
-#### Edición de Empleados
-**Problema:** No se puede editar empleado registrado
-**Solución propuesta:** Agregar modal de edición
-
-#### Edición de Cámaras
-**Problema:** No se puede editar configuración de cámara
-**Solución propuesta:** Agregar modal de edición
 
 ---
 
@@ -225,8 +268,8 @@ Ver: ia-control-correcciones.txt
 
 ---
 
-Última actualización: 07/11/2025 11:35 AM
-Próxima revisión: Al finalizar v1.1.0
+Última actualización: 08/11/2025
+Próxima revisión: Al finalizar v1.8.0
 
 ---
 

@@ -45,15 +45,28 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
 
   const loadVideoDevices = async () => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoInputs = devices.filter(device => device.kind === 'videoinput');
-      setVideoDevices(videoInputs.map(d => ({ deviceId: d.deviceId, label: d.label || `Cámara ${videoInputs.indexOf(d) + 1}` })));
-      if (videoInputs.length > 0) {
-        setSelectedDevice(videoInputs[0].deviceId);
+      // Cargar cámaras de registro desde localStorage
+      const saved = localStorage.getItem('ia-control-cameras');
+      if (saved) {
+        const cameras = JSON.parse(saved);
+        const registroCameras = cameras.filter((c: any) => c.purpose === 'registro' && c.type === 'webcam');
+        
+        if (registroCameras.length === 0) {
+          toast.error('No hay cámaras de registro configuradas. Ve a Configuración de Cámaras.');
+          return;
+        }
+        
+        setVideoDevices(registroCameras.map((c: any) => ({ 
+          deviceId: c.deviceId || '', 
+          label: c.name 
+        })));
+        setSelectedDevice(registroCameras[0].deviceId || '');
+      } else {
+        toast.error('No hay cámaras configuradas');
       }
     } catch (error) {
-      console.error('Error enumerando dispositivos:', error);
-      toast.error('No se pudo acceder a las cámaras');
+      console.error('Error cargando cámaras:', error);
+      toast.error('Error al cargar cámaras');
     }
   };
 

@@ -321,10 +321,12 @@ const MultiCameraMonitor: React.FC = () => {
   const loadCameras = () => {
     const saved = localStorage.getItem('ia-control-cameras');
     if (saved) {
-      setCameras(JSON.parse(saved));
+      const allCameras = JSON.parse(saved);
+      // Filtrar solo cámaras de control
+      const controlCameras = allCameras.filter((c: any) => c.purpose === 'control');
+      setCameras(controlCameras);
     } else {
-      // Cámara por defecto
-      setCameras([{ id: 'CAM-001', name: 'Entrada Principal', location: 'Planta Baja', type: 'webcam', status: 'active' }]);
+      setCameras([]);
     }
   };
 
