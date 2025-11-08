@@ -1,5 +1,6 @@
 import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const polly = new PollyClient({ region: 'us-east-1' });
 const s3 = new S3Client({ region: 'us-east-1' });
@@ -33,14 +34,21 @@ export const handler = async (event) => {
     const fileName = `tts/${Date.now()}.mp3`;
 
     // Subir a S3
-    await s3.send(new PutObjectCommand({
+    const putCommand = new PutObjectCommand({
       Bucket: BUCKET,
       Key: fileName,
       Body: audioBuffer,
       ContentType: 'audio/mpeg'
-    }));
+    });
+    
+    await s3.send(putCommand);
 
-    const audioUrl = `https://${BUCKET}.s3.us-east-1.amazonaws.com/${fileName}`;
+    // Generar presigned URL válida por 1 hora
+    const getCommand = new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: fileName
+    });
+    const audioUrl = await getSignedUrl(s3, getCommand, { expiresIn: 3600 });
 
     return {
       statusCode: 200,

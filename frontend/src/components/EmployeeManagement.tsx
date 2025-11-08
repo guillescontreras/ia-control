@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getEmployees, registerEmployee, getUploadUrl } from '../services/api';
 import type { Employee } from '../services/api';
 import { API_URL } from '../config';
+import MultiAngleCapture from './MultiAngleCapture';
 
 const EmployeeManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -18,6 +19,8 @@ const EmployeeManagement: React.FC = () => {
     imageFiles: [] as File[],
   });
   const [uploading, setUploading] = useState(false);
+  const [showMultiAngle, setShowMultiAngle] = useState(false);
+  const [multiAngleEmpleadoId, setMultiAngleEmpleadoId] = useState('');
 
   useEffect(() => {
     loadEmployees();
@@ -187,6 +190,18 @@ const EmployeeManagement: React.FC = () => {
           >
             + Agregar Empleado
           </button>
+          <button
+            onClick={() => {
+              const id = prompt('ID del empleado para registro multi-ángulo:');
+              if (id) {
+                setMultiAngleEmpleadoId(id);
+                setShowMultiAngle(true);
+              }
+            }}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          >
+            📸 Registro Multi-Ángulo
+          </button>
         </div>
       </div>
 
@@ -245,6 +260,17 @@ const EmployeeManagement: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {showMultiAngle && (
+        <MultiAngleCapture
+          empleadoId={multiAngleEmpleadoId}
+          onComplete={() => {
+            setShowMultiAngle(false);
+            loadEmployees();
+          }}
+          onCancel={() => setShowMultiAngle(false)}
+        />
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
