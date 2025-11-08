@@ -227,13 +227,14 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Video Preview */}
           <div className="space-y-4">
-            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', minHeight: '300px' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover"
+                style={{ minHeight: '300px' }}
               />
               {countdown !== null && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
