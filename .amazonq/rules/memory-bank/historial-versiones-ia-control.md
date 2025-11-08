@@ -12,14 +12,19 @@ VERSIÓN ACTUAL: v1.7.0
 
 ## HISTORIAL DE VERSIONES
 
-### v1.7.0 (08/11/2025) - Fix Crítico Eliminación de Empleados
-- ✅ Corregido bug crítico: empleados eliminados seguían siendo detectados
+### v1.7.0 (08/11/2025) - Fix Crítico Eliminación + Registro Multi-Ángulo Integrado
+- ✅ **Fix crítico:** Empleados eliminados seguían siendo detectados
 - ✅ Endpoint DELETE /employees/{id} ahora elimina rostros de Rekognition
 - ✅ Agregado DeleteFacesCommand al eliminar empleado
 - ✅ Permisos IAM actualizados (rekognition:DeleteFaces)
 - ✅ Dependencia @aws-sdk/client-rekognition agregada
 - ✅ Lambda ia-control-access-log-api desplegada
-- ✅ Probado y funcionando correctamente
+- ✅ **Registro multi-ángulo integrado en modal de agregar empleado**
+- ✅ Eliminado botón externo de registro multi-ángulo
+- ✅ Captura obligatoria con cámara (5 ángulos: frontal, izquierda, derecha, arriba, abajo)
+- ✅ MultiAngleCapture ahora devuelve imágenes en lugar de registrar directamente
+- ✅ Flujo mejorado: datos → captura → confirmación → registro
+- ✅ Historial de versiones agregado a memory-bank
 
 ### v1.6.x (07/11/2025) - Mejoras UX y Registro Multi-Ángulo
 - ✅ Registro multi-ángulo para mejorar reconocimiento facial
