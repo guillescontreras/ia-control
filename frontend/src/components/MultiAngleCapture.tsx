@@ -8,6 +8,11 @@ interface MultiAngleCaptureProps {
   onCancel: () => void;
 }
 
+interface VideoDevice {
+  deviceId: string;
+  label: string;
+}
+
 const ANGLES = [
   { id: 'frontal', name: 'Frontal', instruction: '📸 Mira directo a la cámara' },
   { id: 'izquierda', name: 'Perfil Izquierdo', instruction: '👈 Gira tu cabeza a la izquierda' },
@@ -24,24 +29,57 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [videoDevices, setVideoDevices] = useState<VideoDevice[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>('');
 
   useEffect(() => {
-    startCamera();
+    loadVideoDevices();
     return () => stopCamera();
   }, []);
 
+  useEffect(() => {
+    if (selectedDevice) {
+      startCamera();
+    }
+  }, [selectedDevice]);
+
+  const loadVideoDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(device => device.kind === 'videoinput');
+      setVideoDevices(videoInputs.map(d => ({ deviceId: d.deviceId, label: d.label || `Cámara ${videoInputs.indexOf(d) + 1}` })));
+      if (videoInputs.length > 0) {
+        setSelectedDevice(videoInputs[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Error enumerando dispositivos:', error);
+      toast.error('No se pudo acceder a las cámaras');
+    }
+  };
+
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720, facingMode: 'user' } 
-      });
+      // Detener stream anterior si existe
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      const constraints = selectedDevice 
+        ? { video: { deviceId: { exact: selectedDevice }, width: 1280, height: 720 } }
+        : { video: { width: 1280, height: 720 } };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
       }
     } catch (error) {
       console.error('Error starting camera:', error);
-      toast.error('No se pudo acceder a la cámara');
+      toast.error('No se pudo acceder a la cámara: ' + (error as Error).message);
     }
   };
 
@@ -104,10 +142,27 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const allCaptured = Object.keys(capturedImages).length === ANGLES.length;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">📸 Registro Multi-Ángulo</h2>
-        <p className="text-gray-600 mb-4">Empleado: <span className="font-semibold">{empleadoId}</span></p>
+        <p className="text-gray-600 mb-2">Empleado: <span className="font-semibold">{empleadoId}</span></p>
+        
+        {videoDevices.length > 1 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cámara:</label>
+            <select
+              value={selectedDevice}
+              onChange={(e) => setSelectedDevice(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            >
+              {videoDevices.map(device => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Video Preview */}
