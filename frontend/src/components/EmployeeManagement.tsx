@@ -250,17 +250,6 @@ const EmployeeManagement: React.FC = () => {
         </table>
       </div>
 
-      {showCameraCapture && (
-        <MultiAngleCapture
-          empleadoId={formData.empleadoId}
-          onComplete={(images) => {
-            setCapturedImages(images);
-            setShowCameraCapture(false);
-          }}
-          onCancel={() => setShowCameraCapture(false)}
-        />
-      )}
-
       {showModal && !showCameraCapture && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -329,6 +318,7 @@ const EmployeeManagement: React.FC = () => {
                         });
                         // Esperar un momento para que se liberen los recursos
                         await new Promise(resolve => setTimeout(resolve, 500));
+                        console.log('Abriendo captura multi-ángulo');
                         setShowCameraCapture(true);
                       }}
                       className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 font-semibold"
@@ -378,6 +368,21 @@ const EmployeeManagement: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showCameraCapture && (
+        <MultiAngleCapture
+          empleadoId={formData.empleadoId}
+          onComplete={(images) => {
+            console.log('Fotos capturadas:', images.length);
+            setCapturedImages(images);
+            setShowCameraCapture(false);
+          }}
+          onCancel={() => {
+            console.log('Captura cancelada');
+            setShowCameraCapture(false);
+          }}
+        />
       )}
     </div>
   );
