@@ -35,6 +35,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (!camera) return;
+    
     if (camera.type === 'webcam') {
       startWebcam();
     } else if (camera.type === 'ip' || camera.type === 'rtsp') {
@@ -551,11 +553,25 @@ const MultiCameraMonitor: React.FC = () => {
       </div>
 
       {/* Camera Grid */}
-      <div className="grid gap-4" style={{ 
-        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-        width: '100%'
-      }}>
-        {cameras.map(camera => (
+      {cameras.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <p className="text-gray-500 mb-4">No hay cámaras en el monitor</p>
+          <button
+            onClick={() => {
+              loadAvailableCameras();
+              setShowAddModal(true);
+            }}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+          >
+            + Agregar Primera Cámara
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4" style={{ 
+          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          width: '100%'
+        }}>
+          {cameras.map(camera => (
           <div key={camera.id} className="bg-white rounded-lg shadow p-3">
             <CameraFeed 
               camera={camera} 
@@ -580,8 +596,9 @@ const MultiCameraMonitor: React.FC = () => {
               </button>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Events Log */}
       <div className="bg-white rounded-lg shadow p-6">
