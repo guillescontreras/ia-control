@@ -5,14 +5,33 @@ Inicio: 04/11/2025
 Estado: En Desarrollo Activo
 
 ================================================================================
-VERSIÓN ACTUAL: v1.9.0
+VERSIÓN ACTUAL: v1.11.0
 ================================================================================
 
 ---
 
 ## HISTORIAL DE VERSIONES
 
-### v1.9.0 (08/11/2025) - Fix Definitivo Modal Multi-Ángulo
+### v1.11.0 (08/11/2025) - Sistema Completo Funcional
+- ✅ **Modal multi-ángulo 100% funcional** (fix Tailwind CSS)
+- ✅ **Cambio de contraseña funcionando** desde panel de usuarios
+- ✅ **Backup local automatizado** (backup-local.sh)
+- ✅ **Documentación arquitectura compartida** (Cognito + DynamoDB)
+- ✅ Lambda user-manager acepta `password` y `newPassword`
+- ✅ Logs de debugging para cambio de contraseña
+- ✅ Permisos IAM completos (AdminUpdateUserAttributes, AdminSetUserPassword)
+- ✅ CORS configurado en PUT /users/{email}
+- ✅ Cámara se detiene correctamente al quitar del monitor
+- ✅ Video modal con inline styles (eliminado Tailwind)
+
+### v1.10.0 (08/11/2025) - Fix Definitivo Modal Multi-Ángulo
+- ✅ Eliminado TODO Tailwind CSS del componente MultiAngleCapture
+- ✅ Convertido a inline styles puros
+- ✅ Modal, video y controles 100% funcionales
+- ✅ Captura de 5 ángulos funcionando
+- ✅ Registro de empleado completado
+
+### v1.9.0 (08/11/2025) - Fix Modal Multi-Ángulo
 - ✅ **Protocolo de resolución ejecutado**: Consulta documentación MDN
 - ✅ play() ahora maneja Promise correctamente (async/await)
 - ✅ Logs de dimensiones: videoWidth/Height y offsetWidth/Height
