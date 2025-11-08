@@ -33,6 +33,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!camera) return;
@@ -69,6 +70,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
       };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setIsStreaming(true);
@@ -130,9 +132,16 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   };
 
   const stopCamera = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('Track detenido:', track.label);
+      });
+      streamRef.current = null;
+    }
+    
     if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
     
     if (camera.type === 'ip' || camera.type === 'rtsp') {

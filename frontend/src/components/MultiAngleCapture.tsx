@@ -50,22 +50,23 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   const loadVideoDevices = async () => {
     console.log('Cargando dispositivos de video...');
     try {
-      // Primero obtener permisos
       console.log('Solicitando permisos de cámara...');
-      await navigator.mediaDevices.getUserMedia({ video: true });
-      console.log('Permisos obtenidos');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('Permisos obtenidos, deteniendo stream temporal');
+      stream.getTracks().forEach(track => track.stop());
       
-      // Cargar cámaras de registro desde localStorage
       const saved = localStorage.getItem('ia-control-cameras');
       if (saved) {
         const cameras = JSON.parse(saved);
         const registroCameras = cameras.filter((c: any) => c.purpose === 'registro' && c.type === 'webcam');
+        console.log('Cámaras de registro encontradas:', registroCameras.length);
         
         if (registroCameras.length === 0) {
-          toast.error('No hay cámaras de registro configuradas. Ve a Configuración de Cámaras.', { duration: 5000 });
-          // Usar cámara por defecto si no hay configuradas
+          console.log('No hay cámaras de registro, usando cámara por defecto');
+          toast.error('No hay cámaras de registro configuradas. Usando cámara predeterminada.', { duration: 5000 });
           const devices = await navigator.mediaDevices.enumerateDevices();
           const videoInputs = devices.filter(d => d.kind === 'videoinput');
+          console.log('Dispositivos de video disponibles:', videoInputs.length);
           if (videoInputs.length > 0) {
             setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
             setSelectedDevice(videoInputs[0].deviceId);
@@ -78,10 +79,12 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
           label: c.name 
         })));
         setSelectedDevice(registroCameras[0].deviceId || '');
+        console.log('Cámara seleccionada:', registroCameras[0].name);
       } else {
-        // Sin configuración, usar cámara por defecto
+        console.log('Sin configuración guardada, usando cámara por defecto');
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputs = devices.filter(d => d.kind === 'videoinput');
+        console.log('Dispositivos de video disponibles:', videoInputs.length);
         if (videoInputs.length > 0) {
           setVideoDevices([{ deviceId: videoInputs[0].deviceId, label: videoInputs[0].label || 'Cámara predeterminada' }]);
           setSelectedDevice(videoInputs[0].deviceId);
@@ -94,9 +97,10 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
   };
 
   const startCamera = async () => {
+    console.log('Iniciando cámara con deviceId:', selectedDevice);
     try {
-      // Detener stream anterior si existe
       if (streamRef.current) {
+        console.log('Deteniendo stream anterior');
         streamRef.current.getTracks().forEach(track => track.stop());
       }
 
@@ -104,12 +108,15 @@ const MultiAngleCapture: React.FC<MultiAngleCaptureProps> = ({ empleadoId, onCom
         ? { video: { deviceId: { exact: selectedDevice }, width: 1280, height: 720 } }
         : { video: { width: 1280, height: 720 } };
       
+      console.log('Solicitando stream con constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Stream obtenido, asignando a video element');
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata cargada, reproduciendo');
           videoRef.current?.play();
         };
       }

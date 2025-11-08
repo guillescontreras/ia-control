@@ -5,12 +5,21 @@ Inicio: 04/11/2025
 Estado: En Desarrollo Activo
 
 ================================================================================
-VERSIÓN ACTUAL: v1.7.0
+VERSIÓN ACTUAL: v1.8.8
 ================================================================================
 
 ---
 
 ## HISTORIAL DE VERSIONES
+
+### v1.8.8 (08/11/2025) - Fix Cámara Siempre Encendida + Modal Blanco
+- ✅ **Fix crítico:** Cámara nunca se detiene al quitar del monitor
+- ✅ streamRef agregado a CameraFeed para rastrear y detener streams correctamente
+- ✅ stopCamera() ahora detiene todos los tracks y libera recursos
+- ✅ **Fix crítico:** Modal MultiAngleCapture aparecía en blanco
+- ✅ Logs detallados agregados en loadVideoDevices() y startCamera()
+- ✅ Stream temporal detenido después de obtener permisos
+- ✅ Diagnóstico completo para identificar punto de falla
 
 ### v1.7.0 (08/11/2025) - Fix Crítico Eliminación + Registro Multi-Ángulo Integrado
 - ✅ **Fix crítico:** Empleados eliminados seguían siendo detectados
