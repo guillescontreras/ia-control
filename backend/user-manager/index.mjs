@@ -124,7 +124,9 @@ export const handler = async (event) => {
     // PUT /users/{email} - Actualizar usuario
     if (method === 'PUT' && path.startsWith('/users/')) {
       const email = decodeURIComponent(path.split('/')[2]);
-      const { firstName, lastName, role, newPassword } = JSON.parse(event.body);
+      const body = JSON.parse(event.body);
+      const { firstName, lastName, role } = body;
+      const newPassword = body.newPassword || body.password; // Aceptar ambos campos
 
       // Actualizar atributos
       if (firstName || lastName) {
@@ -139,12 +141,22 @@ export const handler = async (event) => {
 
       // Cambiar contraseña
       if (newPassword) {
-        await cognitoClient.send(new AdminSetUserPasswordCommand({
-          UserPoolId: USER_POOL_ID,
-          Username: email,
-          Password: newPassword,
-          Permanent: true
-        }));
+        console.log('Cambiando contraseña para:', email);
+        console.log('Nueva contraseña recibida:', newPassword ? 'SÍ' : 'NO');
+        try {
+          await cognitoClient.send(new AdminSetUserPasswordCommand({
+            UserPoolId: USER_POOL_ID,
+            Username: email,
+            Password: newPassword,
+            Permanent: true
+          }));
+          console.log('Contraseña cambiada exitosamente en Cognito');
+        } catch (pwdError) {
+          console.error('Error cambiando contraseña:', pwdError);
+          throw pwdError;
+        }
+      } else {
+        console.log('No se recibió newPassword, no se cambiará contraseña');
       }
 
       // Actualizar perfil en DynamoDB
@@ -191,11 +203,16 @@ export const handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error completo:', JSON.stringify(error, null, 2));
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      })
     };
   }
 };
