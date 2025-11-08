@@ -46,7 +46,15 @@ const CameraSettings: React.FC = () => {
   const loadCameras = () => {
     const saved = localStorage.getItem('ia-control-cameras');
     if (saved) {
-      setCameras(JSON.parse(saved));
+      const allCameras = JSON.parse(saved);
+      // Migrar cámaras antiguas sin campo purpose
+      const migratedCameras = allCameras.map((c: any) => ({
+        ...c,
+        purpose: c.purpose || 'control' // Por defecto control si no tiene
+      }));
+      setCameras(migratedCameras);
+      // Guardar migración
+      localStorage.setItem('ia-control-cameras', JSON.stringify(migratedCameras));
     }
   };
 
@@ -71,8 +79,10 @@ const CameraSettings: React.FC = () => {
       ));
       toast.success('Cámara actualizada');
     } else {
-      if (cameras.some(c => c.id === formData.id)) {
-        toast.error('Ya existe una cámara con ese ID');
+      // Validar ID único
+      const existingCamera = cameras.find(c => c.id === formData.id);
+      if (existingCamera) {
+        toast.error(`Ya existe una cámara con ID ${formData.id}: ${existingCamera.name}`);
         return;
       }
       saveCameras([...cameras, { ...formData, status: 'active' as const }]);
@@ -123,15 +133,28 @@ const CameraSettings: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">⚙️ Configuración de Cámaras</h2>
-        <button
-          onClick={() => {
-            loadVideoDevices();
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          + Agregar Cámara
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (window.confirm('¿Ver todas las cámaras en consola?')) {
+                console.log('Cámaras:', cameras);
+                toast.success('Revisa la consola del navegador');
+              }
+            }}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+          >
+            🔍 Debug
+          </button>
+          <button
+            onClick={() => {
+              loadVideoDevices();
+              setShowModal(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            + Agregar Cámara
+          </button>
+        </div>
       </div>
 
       {/* Cámaras de Control */}
