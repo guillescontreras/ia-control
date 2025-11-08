@@ -213,23 +213,24 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
         {camera.name}
       </div>
       
-      <button
-        onClick={() => onTogglePause(camera.id)}
-        className="absolute top-1 right-8 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs hover:bg-opacity-90"
-      >
-        {isPaused ? '▶️' : '⏸️'}
-      </button>
+      <div className="absolute top-1 right-1 flex gap-1 items-center z-10">
+        <div className={`w-3 h-3 rounded-full ${
+          camera.status === 'active' ? 'bg-green-500' : 
+          camera.status === 'error' ? 'bg-red-500' : 'bg-gray-500'
+        }`} />
+        <button
+          onClick={() => onTogglePause(camera.id)}
+          className="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs hover:bg-opacity-90"
+        >
+          {isPaused ? '▶️' : '⏸️'}
+        </button>
+      </div>
       
       {!isStreaming && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="text-white text-xs">Cargando...</div>
         </div>
       )}
-      
-      <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
-        camera.status === 'active' ? 'bg-green-500' : 
-        camera.status === 'error' ? 'bg-red-500' : 'bg-gray-500'
-      }`} />
 
       {camera.lastDetection && (
         <div className={`absolute bottom-2 left-2 right-2 px-3 py-2 rounded ${
@@ -354,11 +355,6 @@ const MultiCameraMonitor: React.FC = () => {
   const handleCapture = async (cameraId: string, imageBase64: string) => {
     if (!imageBase64 || imageBase64.length < 1000) {
       return; // Ignorar frames vacíos
-    }
-
-    // Solo procesar si está grabando
-    if (!recording) {
-      return;
     }
 
     try {
@@ -565,7 +561,10 @@ const MultiCameraMonitor: React.FC = () => {
       </div>
 
       {/* Camera Grid */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+      <div className="grid gap-4" style={{ 
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        width: '100%'
+      }}>
         {cameras.map(camera => (
           <div key={camera.id} className="bg-white rounded-lg shadow p-3">
             <CameraFeed 
