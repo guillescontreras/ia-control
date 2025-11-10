@@ -50,16 +50,21 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   }, [camera]);
 
   useEffect(() => {
-    if (isStreaming) {
+    if (isStreaming && !isPaused) {
       const interval = 1000; // 1 segundo para todas las cámaras
       intervalRef.current = setInterval(() => {
         captureFrame();
       }, interval);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isStreaming]);
+  }, [isStreaming, isPaused]);
 
   const startWebcam = async () => {
     try {
@@ -161,7 +166,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   };
 
   const captureFrame = async () => {
-    if (!videoRef.current || isPaused) return;
+    if (!videoRef.current) return;
 
     if (camera.type === 'webcam') {
       if (!canvasRef.current) return;
@@ -376,24 +381,16 @@ const MultiCameraMonitor: React.FC = () => {
     localStorage.setItem('ia-control-active-cameras', JSON.stringify(activeIds));
   };
 
-  const toggleCameraPause = async (cameraId: string) => {
-    const isPaused = pausedCameras.has(cameraId);
-    const endpoint = isPaused ? 'resume' : 'pause';
-    
-    try {
-      await fetch(`${STREAMING_SERVER}/stream/${endpoint}/${cameraId}`, { method: 'POST' });
-      setPausedCameras(prev => {
-        const newSet = new Set(prev);
-        if (isPaused) {
-          newSet.delete(cameraId);
-        } else {
-          newSet.add(cameraId);
-        }
-        return newSet;
-      });
-    } catch (error) {
-      console.error('Error toggling camera pause:', error);
-    }
+  const toggleCameraPause = (cameraId: string) => {
+    setPausedCameras(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cameraId)) {
+        newSet.delete(cameraId);
+      } else {
+        newSet.add(cameraId);
+      }
+      return newSet;
+    });
   };
 
   const handleCapture = async (cameraId: string, imageBase64: string) => {
@@ -435,7 +432,9 @@ const MultiCameraMonitor: React.FC = () => {
           
           playSuccessSound();
           const nombre = result.nombreCompleto || result.empleadoId;
-          speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
+          setTimeout(() => {
+            speakText(`Hola ${nombre}, selecciona ingreso o egreso`);
+          }, 500);
         }
       } else if (result.tipo === 'no_autorizado') {
         toast.error(`🚫 Persona no autorizada detectada`, { duration: 5000 });
@@ -487,9 +486,9 @@ const MultiCameraMonitor: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">📹 Monitor Multi-Cámara</h2>
+          <h2 className="text-2xl font-bold text-slate-100">📹 Monitor Multi-Cámara</h2>
           {serverHealth && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Servidor: <span className={serverHealth.status === 'ok' ? 'text-green-600' : 'text-red-600'}>
                 {serverHealth.status === 'ok' ? '✅ Activo' : '❌ Error'}
               </span>
@@ -500,42 +499,42 @@ const MultiCameraMonitor: React.FC = () => {
           )}
         </div>
         <div className="flex gap-2 items-center">
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
             <button
               onClick={() => setColumns(2)}
-              className={`px-3 py-1 rounded text-sm ${columns === 2 ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${columns === 2 ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               2 col
             </button>
             <button
               onClick={() => setColumns(3)}
-              className={`px-3 py-1 rounded text-sm ${columns === 3 ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${columns === 3 ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               3 col
             </button>
             <button
               onClick={() => setColumns(4)}
-              className={`px-3 py-1 rounded text-sm ${columns === 4 ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${columns === 4 ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               4 col
             </button>
           </div>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
             <button
               onClick={() => setCameraSize('small')}
-              className={`px-3 py-1 rounded text-sm ${cameraSize === 'small' ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${cameraSize === 'small' ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               S
             </button>
             <button
               onClick={() => setCameraSize('medium')}
-              className={`px-3 py-1 rounded text-sm ${cameraSize === 'medium' ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${cameraSize === 'medium' ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               M
             </button>
             <button
               onClick={() => setCameraSize('large')}
-              className={`px-3 py-1 rounded text-sm ${cameraSize === 'large' ? 'bg-white shadow' : ''}`}
+              className={`px-3 py-1 rounded text-sm ${cameraSize === 'large' ? 'bg-slate-600 text-slate-100 shadow' : 'text-slate-300'}`}
             >
               L
             </button>
@@ -543,7 +542,7 @@ const MultiCameraMonitor: React.FC = () => {
           <button
             onClick={() => setRecording(!recording)}
             className={`px-4 py-2 rounded-lg ${
-              recording ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'
+              recording ? 'bg-red-600 text-white' : 'bg-slate-600 text-slate-100'
             }`}
           >
             {recording ? '⏺️ Grabando' : '⏸️ Pausado'}
@@ -563,8 +562,8 @@ const MultiCameraMonitor: React.FC = () => {
 
       {/* Camera Grid */}
       {cameras.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-500 mb-4">No hay cámaras en el monitor</p>
+        <div className="bg-slate-800 rounded-lg shadow-lg p-8 text-center border border-slate-700">
+          <p className="text-slate-400 mb-4">No hay cámaras en el monitor</p>
           <button
             onClick={() => {
               loadAvailableCameras();
@@ -581,7 +580,7 @@ const MultiCameraMonitor: React.FC = () => {
           width: '100%'
         }}>
           {cameras.map(camera => (
-          <div key={camera.id} className="bg-white rounded-lg shadow p-3">
+          <div key={camera.id} className="bg-slate-800 rounded-lg shadow-lg p-3 border border-slate-700">
             <CameraFeed 
               camera={camera} 
               onCapture={handleCapture} 
@@ -590,10 +589,10 @@ const MultiCameraMonitor: React.FC = () => {
               onTogglePause={toggleCameraPause}
             />
             <div className="mt-2 flex justify-between items-center">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-slate-300">
                 {camera.location}
                 {pausedCameras.has(camera.id) && (
-                  <span className="ml-2 text-orange-600 font-semibold">⏸️ Pausada</span>
+                  <span className="ml-2 text-orange-400 font-semibold">⏸️ Pausada</span>
                 )}
               </div>
               <button
@@ -610,13 +609,13 @@ const MultiCameraMonitor: React.FC = () => {
       )}
 
       {/* Events Log */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">📋 Eventos Recientes</h3>
+          <h3 className="text-lg font-semibold text-slate-100">📋 Eventos Recientes</h3>
           <button
             onClick={exportEvents}
             disabled={events.length === 0}
-            className="text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 disabled:opacity-50"
+            className="text-sm bg-slate-600 text-slate-100 px-3 py-1 rounded hover:bg-slate-700 disabled:opacity-50"
           >
             💾 Exportar
           </button>
@@ -624,23 +623,23 @@ const MultiCameraMonitor: React.FC = () => {
         
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {events.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No hay eventos registrados</p>
+            <p className="text-center text-slate-500 py-8">No hay eventos registrados</p>
           ) : (
             events.map((event, idx) => (
               <div key={idx} className={`p-3 rounded border ${
-                event.tipo === 'autorizado' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                event.tipo === 'autorizado' ? 'bg-green-900/20 border-green-700' : 'bg-red-900/20 border-red-700'
               }`}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="font-semibold">{event.cameraId}</span>
-                    {event.empleadoId && <span className="ml-2 text-sm">- {event.empleadoId}</span>}
+                    <span className="font-semibold text-slate-100">{event.cameraId}</span>
+                    {event.empleadoId && <span className="ml-2 text-sm text-slate-300">- {event.empleadoId}</span>}
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-slate-500">
                     {new Date(event.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
                 {event.objetos && event.objetos.length > 0 && (
-                  <div className="mt-1 text-xs text-gray-600">
+                  <div className="mt-1 text-xs text-slate-400">
                     Objetos: {event.objetos.slice(0, 3).join(', ')}
                   </div>
                 )}
@@ -652,22 +651,22 @@ const MultiCameraMonitor: React.FC = () => {
 
       {/* Add Camera Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Agregar Cámara al Monitor</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-700">
+            <h3 className="text-xl font-bold mb-4 text-slate-100">Agregar Cámara al Monitor</h3>
             {availableCameras.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-gray-600 mb-2">No hay cámaras disponibles</p>
-                <p className="text-sm text-gray-500">Todas las cámaras de control están en el monitor o no hay cámaras configuradas.</p>
+                <p className="text-slate-300 mb-2">No hay cámaras disponibles</p>
+                <p className="text-sm text-slate-400">Todas las cámaras de control están en el monitor o no hay cámaras configuradas.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cámara</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Seleccionar Cámara</label>
                   <select
                     value={selectedCameraId}
                     onChange={(e) => setSelectedCameraId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-100"
                   >
                     <option value="">-- Selecciona una cámara --</option>
                     {availableCameras.map(camera => (
@@ -690,7 +689,7 @@ const MultiCameraMonitor: React.FC = () => {
                       setShowAddModal(false);
                       setSelectedCameraId('');
                     }}
-                    className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                    className="flex-1 bg-slate-600 text-slate-100 px-4 py-2 rounded-lg hover:bg-slate-700"
                   >
                     Cancelar
                   </button>
@@ -703,10 +702,10 @@ const MultiCameraMonitor: React.FC = () => {
 
       {/* Access Direction Modal */}
       {accessModal?.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-2xl">
-            <h3 className="text-2xl font-bold mb-2 text-center">👤 Empleado Reconocido</h3>
-            <p className="text-center text-gray-600 mb-6 text-lg">{accessModal.nombreCompleto}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-8 w-full max-w-md shadow-2xl border border-slate-700">
+            <h3 className="text-2xl font-bold mb-2 text-center text-slate-100">👤 Empleado Reconocido</h3>
+            <p className="text-center text-slate-300 mb-6 text-lg">{accessModal.nombreCompleto}</p>
             
             <div className="space-y-3">
               <button
@@ -743,7 +742,7 @@ const MultiCameraMonitor: React.FC = () => {
                   }
                   setAccessModal(null);
                 }}
-                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+                className="w-full bg-slate-600 hover:bg-slate-700 text-slate-100 px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Cancelar
               </button>

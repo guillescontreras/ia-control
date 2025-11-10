@@ -181,12 +181,12 @@ export const handler = async (event) => {
       
     } else if (faceDetected) {
       // Rostro detectado pero no reconocido
-      console.log('⚠️ Persona no autorizada detectada');
+      console.log('⚠️ Persona no registrada detectada');
       
       // Enviar alerta SNS
       await sns.send(new PublishCommand({
         TopicArn: SNS_TOPIC_ARN,
-        Subject: '🚨 Alerta: Persona no autorizada',
+        Subject: '🟠 Alerta: Persona no registrada',
         Message: `Rostro no reconocido detectado\nCámara: ${cameraId}\nFecha: ${new Date(timestamp).toLocaleString()}\nObjetos visibles: ${objetos.join(', ')}`
       }));
       
@@ -196,9 +196,9 @@ export const handler = async (event) => {
         Item: {
           alertId: `ALERT-${timestamp}`,
           timestamp,
-          tipo: 'no_autorizado',
+          tipo: 'persona_no_registrada',
           cameraId,
-          descripcion: 'Rostro no reconocido',
+          descripcion: 'Persona no registrada detectada',
           objetos,
           resuelta: false,
           imageUrl: imageKey ? `https://ia-control-coirontech.s3.us-east-1.amazonaws.com/${imageKey}` : null
@@ -209,7 +209,7 @@ export const handler = async (event) => {
         statusCode: 200,
         headers: corsHeaders,
         body: JSON.stringify({
-          tipo: 'no_autorizado',
+          tipo: 'persona_no_registrada',
           objetos,
           alerta: true
         })

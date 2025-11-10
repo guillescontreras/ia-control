@@ -39,8 +39,9 @@ rsync -av --exclude='node_modules' --exclude='*.zip' \
 # Infrastructure scripts
 cp -r infrastructure/ "${BACKUP_PATH}/infrastructure/"
 
-# Streaming server (sin node_modules)
+# Streaming server (sin node_modules y archivos de prueba)
 rsync -av --exclude='node_modules' --exclude='*.log' --exclude='hls' \
+  --exclude='*.jpg' --exclude='*.txt' --exclude='*.json' \
   streaming-server/ "${BACKUP_PATH}/streaming-server/"
 
 # Documentación y logs
@@ -52,6 +53,8 @@ cp README.md "${BACKUP_PATH}/"
 cp DEPLOYMENT.md "${BACKUP_PATH}/"
 cp IMPLEMENTATION.md "${BACKUP_PATH}/"
 cp QUICK-START.md "${BACKUP_PATH}/"
+cp BACKUP-README.md "${BACKUP_PATH}/"
+cp PRUEBA-RAPIDA.md "${BACKUP_PATH}/" 2>/dev/null || true
 cp amplify.yml "${BACKUP_PATH}/"
 cp .gitignore "${BACKUP_PATH}/"
 cp ia-control-correcciones.txt "${BACKUP_PATH}/" 2>/dev/null || true

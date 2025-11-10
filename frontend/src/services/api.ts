@@ -20,6 +20,7 @@ export interface Employee {
 export interface AccessLog {
   timestamp: number;
   empleadoId: string;
+  nombreCompleto?: string;
   cameraId: string;
   tipo: 'ingreso' | 'egreso';
   objetos: string[];

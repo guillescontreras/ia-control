@@ -31,17 +31,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-slate-700">
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🏢</div>
-          <h1 className="text-3xl font-bold text-gray-900">CoironTech</h1>
-          <p className="text-gray-600 mt-2">Control de Accesos</p>
+          <h1 className="text-3xl font-bold text-slate-100">CoironTech</h1>
+          <p className="text-slate-400 mt-2">Control de Accesos</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-300 mb-1">
               Email
             </label>
             <input
@@ -49,13 +49,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
               placeholder="usuario@ejemplo.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-300 mb-1">
               Contraseña
             </label>
             <input
@@ -63,7 +63,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
               placeholder="••••••••"
             />
           </div>
@@ -83,7 +83,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-6 text-center text-sm text-slate-500">
           <p>Sistema de Monitoreo y Control de Accesos</p>
           <p className="mt-1">CoironTech © 2025</p>
         </div>

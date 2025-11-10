@@ -76,6 +76,58 @@ export const handler = async (event) => {
       };
     }
 
+    // GET /users/{email} - Obtener usuario individual
+    if (method === 'GET' && path.startsWith('/users/') && path.split('/').length === 3) {
+      const email = decodeURIComponent(path.split('/')[2]);
+      
+      try {
+        // Obtener usuario de Cognito
+        const usersResponse = await cognitoClient.send(new ListUsersCommand({
+          UserPoolId: USER_POOL_ID,
+          Filter: `email = "${email}"`,
+          Limit: 1
+        }));
+        
+        if (!usersResponse.Users || usersResponse.Users.length === 0) {
+          return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'Usuario no encontrado' })
+          };
+        }
+        
+        const user = usersResponse.Users[0];
+        const nameAttr = user.Attributes.find(a => a.Name === 'name')?.Value || '';
+        const names = nameAttr.split(' ');
+        
+        // Obtener grupos
+        const groupsResponse = await cognitoClient.send(new AdminListGroupsForUserCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: user.Username
+        }));
+        
+        const isAdmin = groupsResponse.Groups.some(g => g.GroupName === 'ia-control-admins');
+        
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            email: email,
+            firstName: names[0] || '',
+            lastName: names.slice(1).join(' ') || '',
+            role: isAdmin ? 'admin' : 'operator'
+          })
+        };
+      } catch (error) {
+        console.error('Error obteniendo usuario:', error);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ error: 'Error obteniendo usuario' })
+        };
+      }
+    }
+    
     // GET /users - Listar usuarios
     if (method === 'GET' && path === '/users') {
       const response = await cognitoClient.send(new ListUsersCommand({

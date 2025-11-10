@@ -176,58 +176,58 @@ const EmployeeManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">👥 Gestión de Empleados</h2>
+        <h2 className="text-2xl font-bold text-slate-100">👥 Gestión de Empleados</h2>
         <div className="flex gap-2">
           <button
             onClick={exportToCSV}
             disabled={filteredEmployees.length === 0}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             📊 Exportar CSV
           </button>
           <button
             onClick={() => { setEditMode(false); setShowModal(true); }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             + Agregar Empleado
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-slate-800 rounded-lg shadow-lg p-4 border border-slate-700">
         <input
           type="text"
           placeholder="🔍 Buscar por nombre, apellido o ID..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-slate-100 placeholder-slate-400"
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-700">
+        <table className="min-w-full divide-y divide-slate-700">
+          <thead className="bg-slate-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Departamento</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Alta</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Nombre</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Departamento</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Fecha Alta</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Acciones</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-slate-800 divide-y divide-slate-700">
             {filteredEmployees.map((emp) => (
-              <tr key={emp.empleadoId}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.empleadoId}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{emp.nombre} {emp.apellido}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.departamento}</td>
+              <tr key={emp.empleadoId} className="hover:bg-slate-700 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-300">{emp.empleadoId}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-100">{emp.nombre} {emp.apellido}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{emp.departamento}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${emp.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {emp.activo ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                   {new Date(emp.fechaAlta).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
@@ -251,55 +251,55 @@ const EmployeeManagement: React.FC = () => {
       </div>
 
       {showModal && !showCameraCapture && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editMode ? 'Editar Empleado' : 'Registrar Nuevo Empleado'}</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-700">
+            <h3 className="text-xl font-bold mb-4 text-slate-100">{editMode ? 'Editar Empleado' : 'Registrar Nuevo Empleado'}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">ID Empleado</label>
+                <label className="block text-sm font-medium text-slate-300">ID Empleado</label>
                 <input
                   type="text"
                   required
                   disabled={editMode}
                   value={formData.empleadoId}
                   onChange={(e) => setFormData({ ...formData, empleadoId: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
+                  className="mt-1 block w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-slate-100 disabled:bg-slate-900 disabled:text-slate-500"
                   placeholder="EMP001"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                <label className="block text-sm font-medium text-slate-300">Nombre</label>
                 <input
                   type="text"
                   required
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="mt-1 block w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-slate-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Apellido</label>
+                <label className="block text-sm font-medium text-slate-300">Apellido</label>
                 <input
                   type="text"
                   required
                   value={formData.apellido}
                   onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="mt-1 block w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-slate-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Departamento</label>
+                <label className="block text-sm font-medium text-slate-300">Departamento</label>
                 <input
                   type="text"
                   required
                   value={formData.departamento}
                   onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="mt-1 block w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-slate-100"
                 />
               </div>
               {!editMode && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fotos Multi-Ángulo (Obligatorio)</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Fotos Multi-Ángulo (Obligatorio)</label>
                   {capturedImages.length === 0 ? (
                     <button
                       type="button"

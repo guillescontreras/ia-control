@@ -9,6 +9,7 @@ interface User {
   status: string;
   enabled: boolean;
   createdAt: string;
+  role?: string;
 }
 
 const UserManagement: React.FC = () => {
@@ -135,76 +136,76 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Gestión de Usuarios</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-slate-100">Gestión de Usuarios</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           {showForm ? 'Cancelar' : '+ Crear Usuario'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h3 className="text-xl font-semibold mb-4">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+        <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
+          <h3 className="text-xl font-semibold mb-4 text-slate-100">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Email</label>
                 <input
                   type="email"
                   required
                   disabled={!!editingUser}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full border rounded px-3 py-2 disabled:bg-gray-100"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-100 disabled:bg-slate-900 disabled:text-slate-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Rol</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Rol</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-100"
                 >
                   <option value="operator">Operador</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Nombre</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Nombre</label>
                 <input
                   type="text"
                   required
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Apellido</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Apellido</label>
                 <input
                   type="text"
                   required
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-100"
                 />
               </div>
             </div>
             {editingUser && (
               <div>
-                <label className="block text-sm font-medium mb-1">Nueva Contraseña (opcional)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Nueva Contraseña (opcional)</label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-100"
                   placeholder="Dejar vacío para no cambiar"
                 />
-                <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números</p>
+                <p className="text-xs text-slate-500 mt-1">Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números</p>
               </div>
             )}
             <button
@@ -218,22 +219,22 @@ const UserManagement: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-slate-800 rounded-lg shadow-lg overflow-hidden border border-slate-700">
         <table className="min-w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Nombre</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Creado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-700">
             {users.map((user) => (
-              <tr key={user.username}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">{user.name}</td>
+              <tr key={user.username} className="hover:bg-slate-700 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{user.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded ${
                     user.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -241,21 +242,54 @@ const UserManagement: React.FC = () => {
                     {user.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setEditingUser(user);
-                      const names = user.name?.split(' ') || ['', ''];
-                      setFormData({
-                        email: user.email,
-                        firstName: names[0] || '',
-                        lastName: names.slice(1).join(' ') || '',
-                        role: 'operator',
-                        password: ''
-                      });
+                      
+                      // Obtener datos completos del usuario incluyendo rol
+                      try {
+                        const session = await fetchAuthSession();
+                        const token = session.tokens?.idToken?.toString();
+                        const response = await fetch(`${API_URL}/users/${encodeURIComponent(user.email)}`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                          const userData = await response.json();
+                          setFormData({
+                            email: userData.email,
+                            firstName: userData.firstName || '',
+                            lastName: userData.lastName || '',
+                            role: userData.role || 'operator',
+                            password: ''
+                          });
+                        } else {
+                          // Fallback si falla
+                          const names = user.name?.split(' ') || ['', ''];
+                          setFormData({
+                            email: user.email,
+                            firstName: names[0] || '',
+                            lastName: names.slice(1).join(' ') || '',
+                            role: 'operator',
+                            password: ''
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Error obteniendo datos del usuario:', error);
+                        const names = user.name?.split(' ') || ['', ''];
+                        setFormData({
+                          email: user.email,
+                          firstName: names[0] || '',
+                          lastName: names.slice(1).join(' ') || '',
+                          role: 'operator',
+                          password: ''
+                        });
+                      }
+                      
                       setShowForm(true);
                     }}
                     className="text-blue-600 hover:text-blue-800"

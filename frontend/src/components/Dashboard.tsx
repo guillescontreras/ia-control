@@ -113,42 +113,62 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">📊 Resumen de Hoy</h2>
+        <h2 className="text-2xl font-bold text-slate-100">📊 Resumen de Hoy</h2>
         <button
           onClick={generatePDFReport}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center gap-2"
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
         >
           📄 Generar Reporte PDF
         </button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl p-6 text-white">
-          <p className="text-4xl font-bold">{stats.ingresos}</p>
-          <p className="text-sm opacity-90">Ingresos</p>
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white shadow-lg border border-blue-500/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-4xl font-bold">{stats.ingresos}</p>
+              <p className="text-sm opacity-90 mt-1">Ingresos</p>
+            </div>
+            <div className="text-4xl opacity-50">📊</div>
+          </div>
         </div>
         
-        <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-6 text-white">
-          <p className="text-4xl font-bold">{stats.egresos}</p>
-          <p className="text-sm opacity-90">Egresos</p>
+        <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 text-white shadow-lg border border-green-500/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-4xl font-bold">{stats.egresos}</p>
+              <p className="text-sm opacity-90 mt-1">Egresos</p>
+            </div>
+            <div className="text-4xl opacity-50">📊</div>
+          </div>
         </div>
         
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-          <p className="text-4xl font-bold">{stats.presentes}</p>
-          <p className="text-sm opacity-90">Presentes</p>
+        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 text-white shadow-lg border border-purple-500/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-4xl font-bold">{stats.presentes}</p>
+              <p className="text-sm opacity-90 mt-1">Presentes</p>
+            </div>
+            <div className="text-4xl opacity-50">👥</div>
+          </div>
         </div>
         
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-          <p className="text-4xl font-bold">{stats.alertas}</p>
-          <p className="text-sm opacity-90">Alertas</p>
+        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-white shadow-lg border border-red-500/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-4xl font-bold">{stats.alertas}</p>
+              <p className="text-sm opacity-90 mt-1">Alertas</p>
+            </div>
+            <div className="text-4xl opacity-50">🚨</div>
+          </div>
         </div>
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Gráfico de Ingresos vs Egresos */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">📈 Actividad del Día</h3>
+        <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
+          <h3 className="text-lg font-semibold mb-4 text-slate-100">📈 Actividad del Día</h3>
           <Bar
             data={{
               labels: ['Ingresos', 'Egresos', 'Presentes'],
@@ -162,14 +182,18 @@ const Dashboard: React.FC = () => {
               responsive: true,
               plugins: {
                 legend: { display: false }
+              },
+              scales: {
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: '#334155' } },
+                y: { ticks: { color: '#cbd5e1' }, grid: { color: '#334155' } }
               }
             }}
           />
         </div>
 
         {/* Gráfico de Tipos de Acceso */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">🥧 Distribución de Accesos</h3>
+        <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
+          <h3 className="text-lg font-semibold mb-4 text-slate-100">🥧 Distribución de Accesos</h3>
           <Doughnut
             data={{
               labels: ['Ingresos', 'Egresos'],
@@ -181,15 +205,18 @@ const Dashboard: React.FC = () => {
             options={{
               responsive: true,
               plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                  position: 'bottom',
+                  labels: { color: '#cbd5e1' }
+                }
               }
             }}
           />
         </div>
 
         {/* Gráfico de Actividad por Hora */}
-        <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
-          <h3 className="text-lg font-semibold mb-4">⏰ Actividad por Hora</h3>
+        <div className="bg-slate-800 rounded-lg shadow-lg p-6 md:col-span-2 border border-slate-700">
+          <h3 className="text-lg font-semibold mb-4 text-slate-100">⏰ Actividad por Hora</h3>
           <Line
             data={{
               labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
@@ -209,9 +236,11 @@ const Dashboard: React.FC = () => {
                 legend: { display: false }
               },
               scales: {
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: '#334155' } },
                 y: {
                   beginAtZero: true,
-                  ticks: { stepSize: 1 }
+                  ticks: { stepSize: 1, color: '#cbd5e1' },
+                  grid: { color: '#334155' }
                 }
               }
             }}
