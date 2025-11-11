@@ -180,6 +180,38 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
       if (!ctx) return;
       
       ctx.drawImage(video, 0, 0);
+      
+      // Detectar movimiento simple comparando frames
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const currentFrame = imageData.data;
+      
+      if ((canvas as any).lastFrame) {
+        const lastFrame = (canvas as any).lastFrame;
+        let diff = 0;
+        const threshold = 30;
+        const pixelStep = 4 * 10; // Revisar cada 10 pixeles para performance
+        
+        for (let i = 0; i < currentFrame.length; i += pixelStep) {
+          const rDiff = Math.abs(currentFrame[i] - lastFrame[i]);
+          const gDiff = Math.abs(currentFrame[i + 1] - lastFrame[i + 1]);
+          const bDiff = Math.abs(currentFrame[i + 2] - lastFrame[i + 2]);
+          
+          if (rDiff > threshold || gDiff > threshold || bDiff > threshold) {
+            diff++;
+          }
+        }
+        
+        const motionPercentage = (diff / (currentFrame.length / pixelStep)) * 100;
+        
+        // Solo capturar si hay movimiento significativo (>1%)
+        if (motionPercentage < 1) {
+          (canvas as any).lastFrame = new Uint8ClampedArray(currentFrame);
+          return; // No hay movimiento, no capturar
+        }
+      }
+      
+      (canvas as any).lastFrame = new Uint8ClampedArray(currentFrame);
+      
       const imageBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
       
       onCapture(camera.id, imageBase64);
@@ -282,6 +314,7 @@ const MultiCameraMonitor: React.FC = () => {
     imageBase64: string;
   } | null>(null);
   const [lastAccessTime, setLastAccessTime] = useState<{[key: string]: number}>({});
+  const lastEPPAlertTimeRef = useRef<{[key: string]: number}>({});
   const [availableCameras, setAvailableCameras] = useState<Camera[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCameraId, setSelectedCameraId] = useState('');
@@ -399,6 +432,60 @@ const MultiCameraMonitor: React.FC = () => {
     }
 
     try {
+      const camera = cameras.find(c => c.id === cameraId);
+      const zoneId = (camera as any)?.zoneId;
+
+      // Si la cámara tiene zona EPP, usar detección EPP
+      if (zoneId) {
+        const response = await fetch(`${API_URL}/epp-detect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64, cameraId, zoneId })
+        });
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        
+        if (!result.compliance.compliant) {
+          const now = Date.now();
+          const lastAlert = lastEPPAlertTimeRef.current[zoneId] || 0;
+          const cooldown = 30000; // 30 segundos
+          
+          // Solo alertar si pasó el cooldown
+          if ((now - lastAlert) > cooldown) {
+            toast.error(`🦺 Incumplimiento EPP: ${result.compliance.missingEPP.join(', ')}`, { duration: 5000 });
+            playAlertSound();
+            lastEPPAlertTimeRef.current[zoneId] = now;
+          }
+        }
+
+        setCameras(prev => prev.map(cam => 
+          cam.id === cameraId 
+            ? { 
+                ...cam, 
+                lastDetection: {
+                  tipo: result.compliance.compliant ? 'autorizado' : 'no_autorizado',
+                  empleadoId: `EPP ${result.compliance.percentage}%`,
+                  timestamp: Date.now()
+                }
+              }
+            : cam
+        ));
+
+        if (recording) {
+          setEvents(prev => [{
+            cameraId,
+            timestamp: Date.now(),
+            tipo: result.compliance.compliant ? 'epp_compliant' : 'epp_violation',
+            compliance: result.compliance
+          }, ...prev].slice(0, 50));
+        }
+
+        return;
+      }
+
+      // Detección de acceso normal
       const response = await fetch(`${API_URL}/process-frame`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

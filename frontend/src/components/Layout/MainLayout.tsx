@@ -2,7 +2,7 @@ import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
-type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras';
+type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras' | 'admin-epp-zones';
 
 interface MainLayoutProps {
   activeSection: Section;
@@ -11,6 +11,7 @@ interface MainLayoutProps {
   user: any;
   isAdmin: boolean;
   onLogout: () => void;
+  onProfileUpdate: () => void;
   children: React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   user,
   isAdmin,
   onLogout,
+  onProfileUpdate,
   children
 }) => {
   return (
@@ -35,6 +37,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         user={user}
         isAdmin={isAdmin}
         onLogout={onLogout}
+        onProfileUpdate={onProfileUpdate}
       />
       <main className="ml-64 pt-16">
         <div className="p-6">

@@ -1,6 +1,6 @@
 import React from 'react';
 
-type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras';
+type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras' | 'admin-epp-zones';
 
 interface SidebarProps {
   activeSection: Section;
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isAdm
     { id: 'admin-employees' as Section, icon: '👥', label: 'Empleados' },
     { id: 'admin-users' as Section, icon: '🔐', label: 'Usuarios' },
     { id: 'admin-cameras' as Section, icon: '🎥', label: 'Cámaras' },
+    { id: 'admin-epp-zones' as Section, icon: '🦺', label: 'Zonas EPP' },
   ];
 
   return (
@@ -110,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isAdm
       {/* Footer */}
       <div className="p-4 border-t border-slate-700">
         <p className="text-xs text-slate-400 font-semibold text-center mb-1">CoironTech IA Control</p>
-        <p className="text-xs text-slate-500 text-center">v1.12.0</p>
+        <p className="text-xs text-slate-500 text-center">v2.0.0</p>
       </div>
     </div>
   );

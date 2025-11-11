@@ -13,12 +13,13 @@ import MultiCameraMonitor from './components/MultiCameraMonitor';
 import UserManagement from './components/UserManagement';
 import PresencePanel from './components/PresencePanel';
 import CameraSettings from './components/CameraSettings';
+import EPPZoneManager from './components/EPPZoneManager';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 Amplify.configure(awsConfig);
 
-type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras';
+type Section = 'dashboard' | 'presence' | 'logs' | 'alerts' | 'multicam' | 'admin-employees' | 'admin-users' | 'admin-cameras' | 'admin-epp-zones';
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -26,10 +27,29 @@ function App() {
   const [userGroups, setUserGroups] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [cameras, setCameras] = useState<any[]>([]);
 
   useEffect(() => {
     checkUser();
+    loadCameras();
   }, []);
+
+  useEffect(() => {
+    if (activeSection === 'admin-epp-zones') {
+      loadCameras();
+    }
+  }, [activeSection]);
+
+  const loadCameras = () => {
+    const saved = localStorage.getItem('ia-control-cameras');
+    if (saved) {
+      const allCameras = JSON.parse(saved);
+      console.log('📹 Cámaras cargadas:', allCameras.length);
+      setCameras(allCameras);
+    } else {
+      console.log('⚠️ No hay cámaras en localStorage');
+    }
+  };
 
   const checkUser = async () => {
     try {
@@ -117,12 +137,17 @@ function App() {
         user={user}
         isAdmin={isAdmin}
         onLogout={handleLogout}
+        onProfileUpdate={checkUser}
       >
         {activeSection === 'dashboard' && <Dashboard />}
         {activeSection === 'presence' && <PresencePanel />}
         {activeSection === 'admin-employees' && <EmployeeManagement />}
         {activeSection === 'admin-users' && <UserManagement />}
         {activeSection === 'admin-cameras' && <CameraSettings />}
+        {activeSection === 'admin-epp-zones' && <EPPZoneManager cameras={cameras} onCameraUpdate={(updatedCameras) => {
+          setCameras(updatedCameras);
+          localStorage.setItem('ia-control-cameras', JSON.stringify(updatedCameras));
+        }} />}
         {activeSection === 'logs' && <AccessLog />}
         {activeSection === 'alerts' && <AlertsPanel />}
         {activeSection === 'multicam' && <MultiCameraMonitor />}

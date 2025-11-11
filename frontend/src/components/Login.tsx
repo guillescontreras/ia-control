@@ -10,6 +10,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [needsPasswordChange, setNeedsPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,14 +20,33 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const { isSignedIn } = await signIn({ username: email, password });
+      const result = await signIn({ username: email, password });
       
-      if (isSignedIn) {
+      if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        setNeedsPasswordChange(true);
+        setLoading(false);
+        return;
+      }
+      
+      if (result.isSignedIn) {
         const user = await getCurrentUser();
         onLoginSuccess(user);
       }
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      console.error('❌ Error de login:', err);
+      let errorMessage = 'Error al iniciar sesión';
+      
+      if (err.name === 'UserNotFoundException') {
+        errorMessage = 'Usuario no encontrado';
+      } else if (err.name === 'NotAuthorizedException') {
+        errorMessage = 'Contraseña incorrecta';
+      } else if (err.name === 'UserNotConfirmedException') {
+        errorMessage = 'Usuario no confirmado. Verifica tu email';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -74,13 +96,83 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-          </button>
+          {!needsPasswordChange ? (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </button>
+          ) : (
+            <>
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+                Debes cambiar tu contraseña antes de continuar
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+                  placeholder="Mínimo 8 caracteres"
+                  minLength={8}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+                  placeholder="Repite la contraseña"
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={async () => {
+                  if (newPassword !== confirmPassword) {
+                    setError('Las contraseñas no coinciden');
+                    return;
+                  }
+                  if (newPassword.length < 8) {
+                    setError('La contraseña debe tener al menos 8 caracteres');
+                    return;
+                  }
+                  
+                  setLoading(true);
+                  setError('');
+                  
+                  try {
+                    const { confirmSignIn } = await import('aws-amplify/auth');
+                    await confirmSignIn({ challengeResponse: newPassword });
+                    const user = await getCurrentUser();
+                    onLoginSuccess(user);
+                  } catch (err: any) {
+                    console.error('❌ Error cambiando contraseña:', err);
+                    setError(err.message || 'Error al cambiar contraseña');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {loading ? 'Cambiando contraseña...' : 'Cambiar Contraseña'}
+              </button>
+            </>
+          )}
         </form>
 
         <div className="mt-6 text-center text-sm text-slate-500">

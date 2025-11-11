@@ -34,6 +34,16 @@ export interface Alert {
   cameraId: string;
   descripcion: string;
   resuelta: boolean;
+  type?: string;
+  severity?: 'high' | 'medium' | 'low';
+  message?: string;
+  imageUrl?: string;
+  zoneName?: string;
+  details?: {
+    personsDetected?: number;
+    compliancePercentage?: number;
+    missingEPP?: string[];
+  };
 }
 
 export interface Stats {

@@ -10,6 +10,8 @@ interface Camera {
   url?: string;
   deviceId?: string;
   status: 'active' | 'inactive';
+  zoneId?: string;  // ID de zona EPP asignada
+  zoneName?: string; // Nombre de zona EPP
 }
 
 const CameraSettings: React.FC = () => {
@@ -31,15 +33,23 @@ const CameraSettings: React.FC = () => {
 
   useEffect(() => {
     loadCameras();
-    loadVideoDevices();
   }, []);
 
   const loadVideoDevices = async () => {
     try {
-      await navigator.mediaDevices.getUserMedia({ video: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoInputs = devices.filter(device => device.kind === 'videoinput');
       setVideoDevices(videoInputs);
+      
+      // Si no hay labels, pedir permisos
+      if (videoInputs.length > 0 && !videoInputs[0].label) {
+        await navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+          stream.getTracks().forEach(track => track.stop());
+        });
+        const devicesWithLabels = await navigator.mediaDevices.enumerateDevices();
+        const videoInputsWithLabels = devicesWithLabels.filter(device => device.kind === 'videoinput');
+        setVideoDevices(videoInputsWithLabels);
+      }
     } catch (error) {
       console.error('Error enumerando dispositivos:', error);
     }
@@ -105,6 +115,7 @@ const CameraSettings: React.FC = () => {
       url: camera.url || '',
       deviceId: camera.deviceId || ''
     });
+    loadVideoDevices();
     setShowModal(true);
   };
 
@@ -141,6 +152,7 @@ const CameraSettings: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play();
         setShowPreview(true);
       }
     } catch (error) {
