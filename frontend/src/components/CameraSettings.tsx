@@ -12,6 +12,8 @@ interface Camera {
   status: 'active' | 'inactive';
   zoneId?: string;  // ID de zona EPP asignada
   zoneName?: string; // Nombre de zona EPP
+  captureInterval?: number; // Intervalo de captura en segundos (5, 10, 30)
+  eppDetectionEnabled?: boolean; // Si la detección EPP está activa
 }
 
 const CameraSettings: React.FC = () => {
@@ -28,7 +30,9 @@ const CameraSettings: React.FC = () => {
     type: 'webcam' as 'webcam' | 'rtsp',
     purpose: 'control' as 'control' | 'registro',
     url: '',
-    deviceId: ''
+    deviceId: '',
+    captureInterval: 10,
+    eppDetectionEnabled: false
   });
 
   useEffect(() => {
@@ -113,7 +117,9 @@ const CameraSettings: React.FC = () => {
       type: camera.type,
       purpose: camera.purpose,
       url: camera.url || '',
-      deviceId: camera.deviceId || ''
+      deviceId: camera.deviceId || '',
+      captureInterval: camera.captureInterval || 10,
+      eppDetectionEnabled: camera.eppDetectionEnabled || false
     });
     loadVideoDevices();
     setShowModal(true);
@@ -134,7 +140,9 @@ const CameraSettings: React.FC = () => {
       type: 'webcam',
       purpose: 'control',
       url: '',
-      deviceId: ''
+      deviceId: '',
+      captureInterval: 10,
+      eppDetectionEnabled: false
     });
     setShowModal(false);
     setEditMode(false);
@@ -336,6 +344,22 @@ const CameraSettings: React.FC = () => {
                   {formData.purpose === 'control' 
                     ? 'Se usará para monitoreo de ingresos/egresos' 
                     : 'Se usará solo para registro de empleados'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300">Intervalo de Captura EPP</label>
+                <select
+                  value={formData.captureInterval}
+                  onChange={(e) => setFormData({ ...formData, captureInterval: parseInt(e.target.value) })}
+                  className="mt-1 block w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-slate-100"
+                >
+                  <option value={5}>Cada 5 segundos</option>
+                  <option value={10}>Cada 10 segundos</option>
+                  <option value={30}>Cada 30 segundos</option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Frecuencia de análisis de EPP cuando esté habilitado
                 </p>
               </div>
 

@@ -18,6 +18,10 @@ interface Camera {
     empleadoId?: string;
     timestamp: number;
   };
+  zoneId?: string;
+  zoneName?: string;
+  captureInterval?: number;
+  eppDetectionEnabled?: boolean;
 }
 
 interface CameraFeedProps {
@@ -26,9 +30,10 @@ interface CameraFeedProps {
   size: 'small' | 'medium' | 'large';
   isPaused: boolean;
   onTogglePause: (cameraId: string) => void;
+  onToggleEPPDetection?: (cameraId: string) => void;
 }
 
-const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaused, onTogglePause }) => {
+const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaused, onTogglePause, onToggleEPPDetection }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -50,8 +55,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
   }, [camera]);
 
   useEffect(() => {
-    if (isStreaming && !isPaused) {
-      const interval = 1000; // 1 segundo para todas las cámaras
+    if (isStreaming && !isPaused && camera.eppDetectionEnabled) {
+      const interval = (camera.captureInterval || 10) * 1000; // Usar intervalo configurado
       intervalRef.current = setInterval(() => {
         captureFrame();
       }, interval);
@@ -64,7 +69,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isStreaming, isPaused]);
+  }, [isStreaming, isPaused, camera.eppDetectionEnabled, camera.captureInterval]);
 
   const startWebcam = async () => {
     try {
@@ -266,6 +271,19 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ camera, onCapture, size, isPaus
           camera.status === 'active' ? 'bg-green-500' : 
           camera.status === 'error' ? 'bg-red-500' : 'bg-gray-500'
         }`} />
+        {camera.zoneId && onToggleEPPDetection && (
+          <button
+            onClick={() => onToggleEPPDetection(camera.id)}
+            className={`px-2 py-1 rounded text-xs font-semibold ${
+              camera.eppDetectionEnabled 
+                ? 'bg-green-600 text-white hover:bg-green-700' 
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
+            title={camera.eppDetectionEnabled ? 'Detener detección EPP' : 'Iniciar detección EPP'}
+          >
+            🦺 {camera.eppDetectionEnabled ? 'ON' : 'OFF'}
+          </button>
+        )}
         <button
           onClick={() => onTogglePause(camera.id)}
           className="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs hover:bg-opacity-90"
@@ -426,6 +444,23 @@ const MultiCameraMonitor: React.FC = () => {
     });
   };
 
+  const toggleEPPDetection = (cameraId: string) => {
+    setCameras(prev => prev.map(cam => 
+      cam.id === cameraId 
+        ? { ...cam, eppDetectionEnabled: !cam.eppDetectionEnabled }
+        : cam
+    ));
+    
+    const camera = cameras.find(c => c.id === cameraId);
+    const newState = !camera?.eppDetectionEnabled;
+    toast.success(
+      newState 
+        ? `🦺 Detección EPP iniciada en ${camera?.name}` 
+        : `🚫 Detección EPP detenida en ${camera?.name}`,
+      { duration: 2000 }
+    );
+  };
+
   const handleCapture = async (cameraId: string, imageBase64: string) => {
     if (!imageBase64 || imageBase64.length < 1000) {
       return; // Ignorar frames vacíos
@@ -559,6 +594,21 @@ const MultiCameraMonitor: React.FC = () => {
 
 
 
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+
+  const startStreamingServer = () => {
+    toast('Ejecute en terminal: cd streaming-server && ./start.sh', { duration: 5000, icon: '▶️' });
+    setTimeout(checkServerHealth, 3000);
+  };
+
+  const restartStreamingServer = () => {
+    toast('Reinicie manualmente el servidor desde terminal', { duration: 3000, icon: '🔄' });
+  };
+
+  const showInstallationGuide = () => {
+    setShowInstallGuide(true);
+  };
+
   const exportEvents = () => {
     const dataStr = JSON.stringify(events, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -574,18 +624,54 @@ const MultiCameraMonitor: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-100">📹 Monitor Multi-Cámara</h2>
-          {serverHealth && (
-            <p className="text-xs text-slate-400 mt-1">
-              Servidor: <span className={serverHealth.status === 'ok' ? 'text-green-600' : 'text-red-600'}>
-                {serverHealth.status === 'ok' ? '✅ Activo' : '❌ Error'}
+          <div className="text-xs text-slate-400 mt-1">
+            {serverHealth ? (
+              <span>
+                Servidor: <span className={serverHealth.status === 'ok' ? 'text-green-600' : 'text-red-600'}>
+                  {serverHealth.status === 'ok' ? '✅ Activo' : '❌ Error'}
+                </span>
+                {serverHealth.poolConnections !== undefined && (
+                  <span className="ml-2">| Pool: {serverHealth.poolConnections} conexiones</span>
+                )}
               </span>
-              {serverHealth.poolConnections !== undefined && (
-                <span className="ml-2">| Pool: {serverHealth.poolConnections} conexiones</span>
-              )}
-            </p>
-          )}
+            ) : (
+              <span className="text-red-600">
+                ❌ Servidor desconectado - 
+                <button 
+                  onClick={showInstallationGuide}
+                  className="underline hover:text-red-400"
+                >
+                  Ver guía de instalación
+                </button>
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2 items-center">
+          {/* Server Controls */}
+          <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={startStreamingServer}
+              className="px-3 py-1 rounded text-sm bg-green-600 text-white hover:bg-green-700"
+              title="Iniciar servidor de streaming"
+            >
+              ▶️ Servidor
+            </button>
+            <button
+              onClick={restartStreamingServer}
+              className="px-3 py-1 rounded text-sm bg-orange-600 text-white hover:bg-orange-700"
+              title="Reiniciar servidor de streaming"
+            >
+              🔄 Reiniciar
+            </button>
+            <button
+              onClick={checkServerHealth}
+              className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700"
+              title="Verificar estado del servidor"
+            >
+              🔍 Estado
+            </button>
+          </div>
           <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
             <button
               onClick={() => setColumns(2)}
@@ -674,6 +760,7 @@ const MultiCameraMonitor: React.FC = () => {
               size={cameraSize}
               isPaused={pausedCameras.has(camera.id)}
               onTogglePause={toggleCameraPause}
+              onToggleEPPDetection={toggleEPPDetection}
             />
             <div className="mt-2 flex justify-between items-center">
               <div className="text-sm text-slate-300">
@@ -783,6 +870,83 @@ const MultiCameraMonitor: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Installation Guide Modal */}
+      {showInstallGuide && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl border border-slate-700 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-slate-100">🛠️ Instalación del Servidor de Streaming</h3>
+              <button
+                onClick={() => setShowInstallGuide(false)}
+                className="text-slate-400 hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4 text-slate-300">
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2">📍 Requisitos:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Node.js (v16 o superior)</li>
+                  <li>FFmpeg (para procesamiento de video)</li>
+                  <li>Acceso al directorio streaming-server</li>
+                </ul>
+              </div>
+              
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2">💻 Instalación:</h4>
+                <div className="space-y-2 text-sm font-mono">
+                  <div className="bg-slate-900 p-2 rounded">
+                    <span className="text-green-400"># 1. Instalar FFmpeg</span><br/>
+                    <span className="text-blue-400">brew install ffmpeg</span> <span className="text-slate-500"># macOS</span><br/>
+                    <span className="text-blue-400">sudo apt install ffmpeg</span> <span className="text-slate-500"># Ubuntu</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded">
+                    <span className="text-green-400"># 2. Navegar al directorio</span><br/>
+                    <span className="text-blue-400">cd streaming-server</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded">
+                    <span className="text-green-400"># 3. Instalar dependencias</span><br/>
+                    <span className="text-blue-400">npm install</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded">
+                    <span className="text-green-400"># 4. Iniciar servidor</span><br/>
+                    <span className="text-blue-400">./start.sh</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-amber-900/20 border border-amber-700 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2 text-amber-300">⚠️ Nota importante:</h4>
+                <p className="text-sm">
+                  El servidor de streaming es necesario solo para cámaras IP/RTSP. 
+                  Las webcams locales funcionan sin él.
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowInstallGuide(false);
+                    checkServerHealth();
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Verificar Estado
+                </button>
+                <button
+                  onClick={() => setShowInstallGuide(false)}
+                  className="bg-slate-600 text-slate-100 px-4 py-2 rounded-lg hover:bg-slate-700"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

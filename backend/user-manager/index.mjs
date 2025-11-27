@@ -5,7 +5,7 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 const cognitoClient = new CognitoIdentityProviderClient({ region: "us-east-1" });
 const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: "us-east-1" }));
 
-const USER_POOL_ID = "us-east-1_zrdfN7OKN";
+const USER_POOL_ID = "us-east-1_mfnduAii4";
 const PROFILES_TABLE = "UserProfiles";
 
 const headers = {
@@ -173,8 +173,46 @@ export const handler = async (event) => {
       };
     }
 
+    // POST /users/{email}/change-password - Cambiar contraseña
+    if (method === 'POST' && path.includes('/change-password')) {
+      const email = decodeURIComponent(path.split('/')[2]);
+      const { currentPassword, newPassword } = JSON.parse(event.body);
+
+      // Validar contraseña
+      if (!newPassword || newPassword.length < 8) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'La contraseña debe tener al menos 8 caracteres' })
+        };
+      }
+
+      try {
+        // Cambiar contraseña en Cognito
+        await cognitoClient.send(new AdminSetUserPasswordCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: email,
+          Password: newPassword,
+          Permanent: true
+        }));
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ message: 'Contraseña actualizada exitosamente' })
+        };
+      } catch (error) {
+        console.error('Error cambiando contraseña:', error);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ error: 'Error al cambiar contraseña' })
+        };
+      }
+    }
+
     // PUT /users/{email} - Actualizar usuario
-    if (method === 'PUT' && path.startsWith('/users/')) {
+    if (method === 'PUT' && path.startsWith('/users/') && !path.includes('/change-password')) {
       const email = decodeURIComponent(path.split('/')[2]);
       const body = JSON.parse(event.body);
       const { firstName, lastName, role } = body;
@@ -191,8 +229,8 @@ export const handler = async (event) => {
         }));
       }
 
-      // Actualizar rol (grupos)
-      if (role) {
+      // Actualizar rol (grupos) - solo si viene en el body
+      if (role !== undefined && role !== null) {
         console.log('Actualizando rol a:', role);
         // Obtener grupos actuales
         const currentGroupsResponse = await cognitoClient.send(new AdminListGroupsForUserCommand({

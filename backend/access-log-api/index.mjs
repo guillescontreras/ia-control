@@ -191,6 +191,63 @@ export const handler = async (event) => {
       };
     }
     
+    // DELETE /alerts/{id} - Eliminar alerta
+    if (httpMethod === 'DELETE' && path.startsWith('/alerts/')) {
+      const alertId = path.split('/')[2];
+      
+      try {
+        // Primero obtener la alerta para conseguir el timestamp
+        const getResult = await dynamo.send(new QueryCommand({
+          TableName: ALERTS_TABLE,
+          KeyConditionExpression: 'alertId = :alertId',
+          ExpressionAttributeValues: {
+            ':alertId': alertId
+          },
+          Limit: 1
+        }));
+        
+        if (!getResult.Items || getResult.Items.length === 0) {
+          return {
+            statusCode: 404,
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ error: 'Alerta no encontrada' })
+          };
+        }
+        
+        const timestamp = getResult.Items[0].timestamp;
+        
+        await dynamo.send(new DeleteCommand({
+          TableName: ALERTS_TABLE,
+          Key: { 
+            alertId: alertId,
+            timestamp: timestamp
+          }
+        }));
+        
+        return {
+          statusCode: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({ message: 'Alerta eliminada exitosamente' })
+        };
+      } catch (error) {
+        console.error('❌ Error:', error);
+        return {
+          statusCode: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({ error: error.message })
+        };
+      }
+    }
+    
     // GET /alerts - Obtener alertas
     if (httpMethod === 'GET' && path === '/alerts') {
       const limit = queryStringParameters?.limit ? parseInt(queryStringParameters.limit) : 50;
